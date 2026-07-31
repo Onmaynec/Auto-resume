@@ -1,45 +1,26 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  createDefaultSelection, moveSelection, normalizeSelection, reorderSelection,
-  resolveSelectedProjects, toggleSelection,
-} from '../js/project-selection.mjs';
+import { defaultSelection, moveSelection, normalizeSelection, reorderSelection, toggleSelection } from '../js/project-selection.mjs';
 
 const repos = [
-  { name: 'alpha', full_name: 'user/alpha', points: 2 },
-  { name: 'beta', full_name: 'user/beta', points: 9 },
-  { name: 'gamma', full_name: 'user/gamma', points: 5 },
+  { name: 'alpha', full_name: 'u/alpha', stargazers_count: 1, forks_count: 0, description: 'a' },
+  { name: 'beta', full_name: 'u/beta', stargazers_count: 4, forks_count: 1, description: 'b' },
+  { name: 'gamma', full_name: 'u/gamma', stargazers_count: 2, forks_count: 0, description: 'c' },
 ];
 
-test('default selection follows score order and limit', () => {
-  assert.deepEqual(
-    createDefaultSelection(repos, (repo) => repo.points, 2),
-    ['user/beta', 'user/gamma'],
-  );
+test('default selection follows project score', () => {
+  assert.deepEqual(defaultSelection(repos, 2), ['u/beta', 'u/gamma']);
 });
 
-test('selection enforces uniqueness, availability and limit', () => {
-  assert.deepEqual(
-    normalizeSelection(['user/beta', 'missing', 'user/beta', 'user/alpha'], repos, 2),
-    ['user/beta', 'user/alpha'],
-  );
+test('selection is unique, available and limited', () => {
+  assert.deepEqual(normalizeSelection(['u/beta', 'u/beta', 'missing', 'u/alpha'], repos, 2), ['u/beta', 'u/alpha']);
 });
 
-test('toggle, move and drag reorder preserve selected projects', () => {
-  let selection = toggleSelection([], 'user/alpha', true, 2);
-  selection = toggleSelection(selection, 'user/beta', true, 2);
-  selection = toggleSelection(selection, 'user/gamma', true, 2);
-  assert.deepEqual(selection, ['user/alpha', 'user/beta']);
-
-  assert.deepEqual(moveSelection(selection, 'user/beta', -1), ['user/beta', 'user/alpha']);
-  assert.deepEqual(reorderSelection(['user/alpha', 'user/beta', 'user/gamma'], 'user/gamma', 'user/alpha'), [
-    'user/gamma', 'user/alpha', 'user/beta',
-  ]);
-});
-
-test('selected repositories resolve in user-defined order', () => {
-  assert.deepEqual(
-    resolveSelectedProjects(repos, ['user/gamma', 'user/beta']).map((repo) => repo.name),
-    ['gamma', 'beta'],
-  );
+test('toggle and reorder preserve selected projects', () => {
+  let selected = toggleSelection([], 'u/alpha', true, repos, 2);
+  selected = toggleSelection(selected, 'u/beta', true, repos, 2);
+  selected = toggleSelection(selected, 'u/gamma', true, repos, 2);
+  assert.deepEqual(selected, ['u/alpha', 'u/beta']);
+  assert.deepEqual(moveSelection(selected, 'u/beta', -1), ['u/beta', 'u/alpha']);
+  assert.deepEqual(reorderSelection(selected, 'u/alpha', 'u/beta'), ['u/beta', 'u/alpha']);
 });

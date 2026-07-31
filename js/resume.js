@@ -1,247 +1,223 @@
 import { $, els, state } from './config.js';
-import { getSelectedProjects } from './projects.js';
+import { selectedRepos } from './projects.js';
 import { buildResumeText, safeFilename } from './resume-text.mjs';
-import { escapeHtml, languageStats, score, toast } from './utils.js';
+import { buildSharePayload, encodeSharePayload } from './share.mjs';
+import { downloadBlob, escapeHtml, languageStats, toast } from './utils.js';
+
+const COLORS = ['#7c5cff', '#29d3a2', '#4da3ff', '#ffb84d', '#ff6b7a', '#ad7cff', '#59d6ff', '#87e36b'];
 
 export function generateResume() {
   const user = state.user;
-  if (!user) return;
+  const skills = languageStats().slice(0, 8);
+  const projects = selectedRepos();
+  const analysis = state.vacancyAnalysis;
+  const topLanguages = skills.slice(0, 3).map((item) => item.name);
+  const headline = analysis?.headline || `${topLanguages.join(' / ') || 'Software'} Developer`;
+  const contactParts = [
+    user.location,
+    `github.com/${user.login}`,
+    `${Number(user.followers || 0)} подписчиков`,
+    `${state.contributions.commits} публичных коммитов за год`,
+  ].filter(Boolean);
 
-  const topLanguages = languageStats().slice(0, 3);
-  const selectedProjects = getSelectedProjects();
-  const projects = selectedProjects.length
-    ? selectedProjects
-    : [...state.repos].sort((a, b) => score(b) - score(a)).slice(0, 5);
+  state.resumeDraft = {
+    name: user.name || user.login,
+    headline,
+    contact: contactParts.join(' · '),
+    about: buildAbout(analysis),
+    projects: projects.map((repo) => ({
+      id: repo.full_name || repo.name,
+      name: repo.name,
+      url: repo.html_url,
+      description: buildProjectDescription(repo),
+    })),
+    skills,
+  };
 
-  $('#resumeName').textContent = user.name || user.login;
-  $('#resumeHeadline').textContent = `${topLanguages.map((item) => item.name).join(' / ') || 'Software'} Developer`;
-  $('#resumeAvatar').src = user.avatar_url;
-  $('#resumeContact').innerHTML = [
-    user.location && `Локация: ${escapeHtml(user.location)}`,
-    `GitHub: github.com/${escapeHtml(user.login)}`,
-    `Подписчики: ${Number(user.followers || 0)}`,
-    `Публичные коммиты за год: ${state.contributions.commits}`,
-  ].filter(Boolean).map((item) => `<span>${item}</span>`).join('');
-
-  $('#resumeAbout').textContent = buildAbout();
-  $('#resumeProjects').innerHTML = projects.map((repo) => `
-    <div class="resume-project" data-repo-key="${escapeHtml(repo.full_name || repo.name)}">
-      <h4 data-editable="true">${escapeHtml(repo.name)}</h4>
-      <a class="resume-project-link" href="${escapeHtml(repo.html_url)}" target="_blank" rel="noreferrer">${escapeHtml(repo.html_url)}</a>
-      <p data-editable="true">${escapeHtml(buildProjectDescription(repo))}</p>
-    </div>
-  `).join('');
-
-  renderSkills();
-  setResumeEditing(false);
-  setResumeTemplate(els.templateSelect.value || state.resumeTemplate || 'visual');
+  renderResume();
   els.resumeSection.classList.remove('hidden');
   setTimeout(() => els.resumeSection.scrollIntoView({ behavior: 'smooth' }), 80);
 }
 
-function buildProjectDescription(repo) {
-  const base = repo.description || `Проект на ${repo.language || 'современном технологическом стеке'}.`;
-  const stack = Object.keys(repo.languages || {}).slice(0, 4).join(', ') || repo.language || 'не указан';
-  return `${base} Стек: ${stack}. ${Number(repo.stargazers_count || 0)} ★, ${Number(repo.forks_count || 0)} форков.`;
+export function renderSharedResume(payload) {
+  state.sharedMode = true;
+  state.user = payload.user || {};
+  state.resumeDraft = payload.draft;
+  state.resumeTemplate = payload.template || 'ats';
+  document.body.classList.add('shared-view');
+  els.dashboard.classList.remove('hidden');
+  [...els.dashboard.children].forEach((child) => {
+    if (child !== els.resumeSection) child.classList.add('hidden');
+  });
+  els.resumeSection.classList.remove('hidden');
+  els.sharedBanner.classList.remove('hidden');
+  renderResume({ editable: false });
 }
 
-function buildAbout() {
+export function setTemplate(template) {
+  state.resumeTemplate = template === 'ats' ? 'ats' : 'visual';
+  renderResume({ editable: !state.sharedMode });
+}
+
+export function renderResume({ editable = true } = {}) {
+  const draft = state.resumeDraft;
+  if (!draft) return;
+  const isAts = state.resumeTemplate === 'ats';
+  els.resume.className = `resume-paper ${isAts ? 'resume-ats' : 'resume-visual'}`;
+  els.resume.dataset.template = state.resumeTemplate;
+  const edit = editable ? 'contenteditable="true" spellcheck="true"' : '';
+  const user = state.user || {};
+
+  els.resume.innerHTML = `
+    <header class="resume-header">
+      <div>
+        <p class="resume-label">${isAts ? 'Professional Resume' : 'GitHub Resume'}</p>
+        <h2 data-draft-field="name" ${edit}>${escapeHtml(draft.name)}</h2>
+        <p class="resume-headline" data-draft-field="headline" ${edit}>${escapeHtml(draft.headline)}</p>
+      </div>
+      ${!isAts && user.avatar_url ? `<img src="${escapeHtml(user.avatar_url)}" alt="Аватар ${escapeHtml(draft.name)}" crossorigin="anonymous">` : ''}
+    </header>
+    <div class="resume-contact" data-draft-field="contact" ${edit}>${escapeHtml(draft.contact)}</div>
+    <section>
+      <h3>О себе</h3>
+      <p data-draft-field="about" ${edit}>${escapeHtml(draft.about)}</p>
+    </section>
+    <section>
+      <h3>Проекты</h3>
+      <div class="resume-projects">${draft.projects.map((project, index) => `
+        <article class="resume-project" data-project-index="${index}">
+          <h4 data-project-field="name" ${edit}>${escapeHtml(project.name)}</h4>
+          <p data-project-field="description" ${edit}>${escapeHtml(project.description)}</p>
+          ${project.url ? `<a href="${escapeHtml(project.url)}" target="_blank" rel="noreferrer">${escapeHtml(project.url)}</a>` : ''}
+        </article>`).join('')}</div>
+    </section>
+    <section class="resume-skills">
+      <div>
+        <h3>Навыки</h3>
+        <div class="skill-legend">${draft.skills.map((skill, index) => `
+          <div class="skill-item" data-skill-index="${index}">
+            <span data-skill-field="name" ${edit}>${escapeHtml(skill.name || skill)}</span>
+            ${typeof skill === 'object' && Number.isFinite(skill.percent) ? `<strong>${skill.percent}%</strong>` : ''}
+          </div>`).join('')}</div>
+      </div>
+      ${!isAts ? '<div class="donut-wrap"><canvas id="skillsChart"></canvas></div>' : ''}
+    </section>`;
+
+  document.querySelectorAll('[data-template-button]').forEach((button) => {
+    button.classList.toggle('active', button.dataset.templateButton === state.resumeTemplate);
+  });
+  $('#visualPdfBtn').classList.toggle('hidden', isAts);
+  $('#atsPdfBtn').classList.toggle('hidden', !isAts);
+  if (editable) bindEditing();
+  if (!isAts) renderSkillsChart();
+}
+
+function bindEditing() {
+  els.resume.querySelectorAll('[data-draft-field]').forEach((element) => {
+    element.addEventListener('input', () => {
+      state.resumeDraft[element.dataset.draftField] = element.textContent.trim();
+    });
+  });
+  els.resume.querySelectorAll('[data-project-index]').forEach((element) => {
+    const index = Number(element.dataset.projectIndex);
+    element.querySelectorAll('[data-project-field]').forEach((field) => {
+      field.addEventListener('input', () => {
+        state.resumeDraft.projects[index][field.dataset.projectField] = field.textContent.trim();
+      });
+    });
+  });
+  els.resume.querySelectorAll('[data-skill-index]').forEach((element) => {
+    const index = Number(element.dataset.skillIndex);
+    const field = element.querySelector('[data-skill-field="name"]');
+    field?.addEventListener('input', () => {
+      if (typeof state.resumeDraft.skills[index] === 'string') state.resumeDraft.skills[index] = field.textContent.trim();
+      else state.resumeDraft.skills[index].name = field.textContent.trim();
+    });
+  });
+}
+
+function buildAbout(analysis) {
   const user = state.user;
   const languages = languageStats().slice(0, 3).map((item) => item.name).join(', ');
   const commits = state.contributions.commits;
   const activity = commits > 250 ? 'высокую' : commits > 80 ? 'стабильную' : 'развивающуюся';
-
-  return `${user.bio ? `${user.bio} ` : ''}Разработчик с публичным портфолио из ${state.repos.length} проектов. Основной технологический фокус: ${languages || 'разработка программного обеспечения'}. За последние 12 месяцев проявил ${activity} активность — ${commits} публичных коммитов и ${state.contributions.total} вкладов. Ориентирован на создание практичных решений, развитие качества кода и понятную презентацию проектов.`;
+  const vacancyPart = analysis?.matched?.length
+    ? ` Для целевой позиции подтверждены навыки: ${analysis.matched.slice(0, 7).join(', ')}.`
+    : '';
+  return `${user.bio ? `${user.bio} ` : ''}Разработчик с публичным портфолио из ${state.repos.length} проектов. Основной технологический фокус: ${languages || 'разработка программного обеспечения'}. За последние 12 месяцев проявил ${activity} активность — ${commits} публичных коммитов и ${state.contributions.total} вкладов.${vacancyPart}`;
 }
 
-function renderSkills() {
-  const stats = languageStats().slice(0, 8);
-  $('#skillLegend').innerHTML = stats.map((item) => `
-    <div class="skill-item" data-editable="true"><span>${escapeHtml(item.name)}</span><strong>${item.percent}%</strong></div>
-  `).join('');
+function buildProjectDescription(repo) {
+  const stack = Object.keys(repo.languages || {}).slice(0, 4).join(', ') || repo.language || 'не указан';
+  return `${repo.description || `Проект на ${repo.language || 'современном технологическом стеке'}.`} Стек: ${stack}. ${repo.stargazers_count || 0} ★, ${repo.forks_count || 0} форков.`;
+}
 
+function renderSkillsChart() {
+  const canvas = $('#skillsChart');
+  if (!canvas) return;
   if (state.charts.skills) state.charts.skills.destroy();
-  state.charts.skills = new Chart($('#skillsChart'), {
+  const skills = state.resumeDraft.skills.filter((item) => typeof item === 'object');
+  state.charts.skills = new Chart(canvas, {
     type: 'doughnut',
-    data: {
-      labels: stats.map((item) => item.name),
-      datasets: [{
-        data: stats.map((item) => item.value),
-        backgroundColor: ['#7c5cff', '#29d3a2', '#4da3ff', '#ffb84d', '#ff6b7a', '#ad7cff', '#59d6ff', '#87e36b'],
-        borderWidth: 0,
-      }],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '68%',
-      plugins: { legend: { display: false } },
-    },
+    data: { labels: skills.map((item) => item.name), datasets: [{ data: skills.map((item) => item.value || item.percent), backgroundColor: COLORS, borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { display: false } } },
   });
-}
-
-export function toggleResumeEditing() {
-  setResumeEditing(!state.resumeEditing);
-  if (state.resumeEditing) $('#resumeHeadline').focus();
-}
-
-function setResumeEditing(enabled) {
-  state.resumeEditing = Boolean(enabled);
-  const resume = $('#resume');
-  resume.classList.toggle('is-editing', state.resumeEditing);
-  resume.querySelectorAll('[data-editable="true"]').forEach((element) => {
-    element.contentEditable = String(state.resumeEditing);
-    element.spellcheck = state.resumeEditing;
-  });
-  els.editButton.textContent = state.resumeEditing ? 'Завершить редактирование' : 'Редактировать текст';
-  els.editButton.setAttribute('aria-pressed', String(state.resumeEditing));
-}
-
-export function setResumeTemplate(template) {
-  const nextTemplate = template === 'ats' ? 'ats' : 'visual';
-  state.resumeTemplate = nextTemplate;
-  els.templateSelect.value = nextTemplate;
-
-  const resume = $('#resume');
-  resume.dataset.template = nextTemplate;
-  resume.classList.toggle('ats-template', nextTemplate === 'ats');
-
-  if (nextTemplate === 'ats') {
-    els.templateHint.textContent = 'ATS PDF создаётся через печать браузера: текст остаётся выделяемым и хорошо распознаётся системами найма.';
-    els.pdfButton.textContent = 'Сохранить ATS PDF';
-  } else {
-    els.templateHint.textContent = 'Визуальный PDF сохраняется как оформленный документ.';
-    els.pdfButton.textContent = 'Скачать PDF';
-  }
-}
-
-function collectResumeModel() {
-  const projects = [...document.querySelectorAll('#resumeProjects .resume-project')].map((item) => ({
-    name: item.querySelector('h4')?.textContent || '',
-    url: item.querySelector('.resume-project-link')?.textContent || '',
-    description: item.querySelector('p')?.textContent || '',
-  }));
-  const skills = [...document.querySelectorAll('#skillLegend .skill-item')]
-    .map((item) => {
-      const name = item.querySelector('span')?.textContent?.trim();
-      const percentage = item.querySelector('strong')?.textContent?.trim();
-      return [name, percentage].filter(Boolean).join(' — ') || item.textContent.replace(/\s+/g, ' ').trim();
-    });
-  const contacts = [...document.querySelectorAll('#resumeContact span')].map((item) => item.textContent);
-
-  return {
-    name: $('#resumeName').textContent,
-    headline: $('#resumeHeadline').textContent,
-    contacts,
-    about: $('#resumeAbout').textContent,
-    projects,
-    skills,
-  };
 }
 
 export async function copyResume() {
-  const text = buildResumeText(collectResumeModel());
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch {
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    textarea.remove();
-  }
-  toast(els.copyButton, 'Скопировано ✓');
+  await navigator.clipboard.writeText(buildResumeText(state.resumeDraft));
+  toast($('#copyBtn'), 'Скопировано ✓');
 }
 
 export function downloadText() {
-  const text = buildResumeText(collectResumeModel());
-  downloadBlob(
-    new Blob([text], { type: 'text/plain;charset=utf-8' }),
-    `${safeFilename(state.user?.login)}-resume.txt`,
-  );
-  toast(els.textButton, 'TXT готов ✓');
+  const filename = `${safeFilename(state.user?.login || state.resumeDraft.name)}-resume.txt`;
+  downloadBlob(`\uFEFF${buildResumeText(state.resumeDraft)}`, filename);
 }
 
-export async function downloadPdf() {
-  if (state.resumeTemplate === 'ats') {
-    printAtsResume();
-    return;
-  }
-
-  const button = els.pdfButton;
-  const wasEditing = state.resumeEditing;
+export async function downloadVisualPdf() {
+  const button = $('#visualPdfBtn');
   button.disabled = true;
   button.textContent = 'Создаём PDF…';
-  if (wasEditing) setResumeEditing(false);
-
   try {
-    const canvas = await html2canvas($('#resume'), { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+    const canvas = await html2canvas(els.resume, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
     const image = canvas.toDataURL('image/png');
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const pageWidth = 198;
-    const pageHeight = 285;
     const imageHeight = canvas.height * pageWidth / canvas.width;
     let heightLeft = imageHeight;
     let position = 6;
-
     pdf.addImage(image, 'PNG', 6, position, pageWidth, imageHeight);
-    heightLeft -= pageHeight;
+    heightLeft -= 285;
     while (heightLeft > 0) {
       position = heightLeft - imageHeight + 6;
       pdf.addPage();
       pdf.addImage(image, 'PNG', 6, position, pageWidth, imageHeight);
-      heightLeft -= pageHeight;
+      heightLeft -= 285;
     }
-    pdf.save(`${safeFilename(state.user?.login)}-github-resume.pdf`);
+    pdf.save(`${safeFilename(state.user?.login || state.resumeDraft.name)}-visual-resume.pdf`);
   } finally {
-    if (wasEditing) setResumeEditing(true);
     button.disabled = false;
-    button.textContent = 'Скачать PDF';
+    button.textContent = 'Визуальный PDF';
   }
 }
 
-function printAtsResume() {
-  const existing = document.querySelector('#atsPrintRoot');
-  existing?.remove();
-
-  const printRoot = document.createElement('div');
-  printRoot.id = 'atsPrintRoot';
-  const clone = $('#resume').cloneNode(true);
-  clone.removeAttribute('id');
-  clone.classList.remove('is-editing');
-  clone.classList.add('ats-template');
-  clone.dataset.template = 'ats';
-  clone.querySelectorAll('[contenteditable]').forEach((element) => element.removeAttribute('contenteditable'));
-  printRoot.appendChild(clone);
-  document.body.appendChild(printRoot);
-  document.body.classList.add('ats-printing');
-
-  let cleaned = false;
-  const cleanup = () => {
-    if (cleaned) return;
-    cleaned = true;
-    document.body.classList.remove('ats-printing');
-    printRoot.remove();
-  };
-
-  window.addEventListener('afterprint', cleanup, { once: true });
+export function printAtsPdf() {
+  const previous = state.resumeTemplate;
+  if (previous !== 'ats') setTemplate('ats');
+  document.body.classList.add('printing-resume');
   setTimeout(() => {
     window.print();
-    setTimeout(cleanup, 60_000);
-  }, 80);
+    document.body.classList.remove('printing-resume');
+    if (previous !== 'ats') setTemplate(previous);
+  }, 60);
 }
 
-function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+export async function copyShareLink() {
+  const payload = buildSharePayload(state);
+  const encoded = encodeSharePayload(payload);
+  const url = new URL(window.location.href);
+  url.hash = `resume=${encoded}`;
+  await navigator.clipboard.writeText(url.toString());
+  toast($('#shareBtn'), 'Ссылка скопирована ✓');
 }
