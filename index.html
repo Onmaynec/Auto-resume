@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Auto Resume — генератор резюме на основе публичного GitHub-профиля." />
-  <title>Auto Resume — GitHub Resume Generator</title>
+  <meta name="description" content="Auto Resume — генератор редактируемого ATS-friendly резюме на основе публичного GitHub-профиля." />
+  <title>Auto Resume v1.1 — GitHub Resume Generator</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -17,13 +17,13 @@
   <div class="noise"></div>
   <header class="hero container">
     <nav class="nav glass">
-      <a class="brand" href="#"><span class="brand-mark">AR</span><span>Auto Resume</span></a>
+      <a class="brand" href="#"><span class="brand-mark">AR</span><span>Auto Resume</span><span class="version-badge">v1.1</span></a>
       <a class="nav-link" href="https://github.com/Onmaynec/Auto-resume" target="_blank" rel="noreferrer">GitHub ↗</a>
     </nav>
     <div class="hero-copy">
       <div class="eyebrow">GitHub → профессиональное резюме</div>
       <h1>Превратите профиль разработчика в впечатляющее резюме.</h1>
-      <p>Публичные проекты, языки и активность — в одном современном отчёте с визуализациями и экспортом в PDF.</p>
+      <p>Выберите лучшие проекты, настройте текст и экспортируйте визуальное или ATS-friendly резюме.</p>
       <form id="searchForm" class="search glass">
         <label class="sr-only" for="username">GitHub username</label>
         <span class="search-icon">⌕</span>
@@ -35,7 +35,7 @@
   </header>
 
   <main class="container">
-    <section id="status" class="status hidden" role="status"></section>
+    <section id="status" class="status hidden" role="status" aria-live="polite"></section>
     <section id="dashboard" class="dashboard hidden">
       <div class="profile-grid">
         <article id="profileCard" class="card profile-card"></article>
@@ -56,8 +56,8 @@
           <div id="heatmap" class="heatmap" aria-label="Календарь активности"></div>
           <div class="heatmap-legend"><span>Меньше</span><i data-level="0"></i><i data-level="1"></i><i data-level="2"></i><i data-level="3"></i><i data-level="4"></i><span>Больше</span></div>
         </article>
-        <article class="card skill-growth-card">
-          <div class="section-heading"><div><span class="kicker">Последние 12 месяцев</span><h2>Динамика профессионального роста</h2></div></div>
+        <article class="card activity-growth-card">
+          <div class="section-heading"><div><span class="kicker">Последние 12 месяцев</span><h2>Динамика активности</h2></div></div>
           <div class="chart-wrap"><canvas id="growthChart"></canvas></div>
         </article>
       </section>
@@ -67,29 +67,65 @@
         <div id="repos" class="repo-grid"></div>
       </section>
 
+      <section id="projectBuilder" class="card project-builder">
+        <div class="section-heading">
+          <div><span class="kicker">Конструктор</span><h2>Проекты для резюме</h2><p class="section-description">Выберите до пяти проектов и настройте их порядок. Он будет сохранён в визуальном и ATS-шаблонах.</p></div>
+          <span id="selectedProjectCount" class="pill">0 / 5</span>
+        </div>
+        <div class="project-builder-grid">
+          <div>
+            <h3>Выберите проекты</h3>
+            <div id="projectOptions" class="project-options" aria-label="Выбор проектов"></div>
+          </div>
+          <div>
+            <h3>Порядок в резюме</h3>
+            <p class="builder-help">Перетаскивайте карточки или используйте кнопки со стрелками.</p>
+            <ol id="selectedProjects" class="selected-projects" aria-live="polite"></ol>
+          </div>
+        </div>
+      </section>
+
       <section class="generate-panel glass">
-        <div><span class="kicker">Следующий шаг</span><h2>Соберите резюме за секунды</h2><p>Алгоритм выберет сильные проекты, определит специализацию и сформирует готовый текст.</p></div>
+        <div><span class="kicker">Следующий шаг</span><h2>Соберите резюме за секунды</h2><p>Текст можно отредактировать после генерации, а выбранные проекты сохранят заданный порядок.</p></div>
         <button id="generateBtn" class="btn btn-primary btn-large">Сгенерировать резюме ✨</button>
       </section>
 
       <section id="resumeSection" class="resume-layout hidden">
-        <article id="resume" class="resume-paper">
-          <header class="resume-header"><div><p class="resume-label">GitHub Resume</p><h2 id="resumeName"></h2><p id="resumeHeadline" class="resume-headline"></p></div><img id="resumeAvatar" alt="Аватар пользователя" /></header>
+        <article id="resume" class="resume-paper" data-template="visual">
+          <header class="resume-header">
+            <div>
+              <p class="resume-label">GitHub Resume</p>
+              <h2 id="resumeName" data-editable="true"></h2>
+              <p id="resumeHeadline" class="resume-headline" data-editable="true"></p>
+            </div>
+            <img id="resumeAvatar" alt="Аватар пользователя" />
+          </header>
           <div class="resume-contact" id="resumeContact"></div>
-          <section><h3>О себе</h3><p id="resumeAbout"></p></section>
+          <section><h3>О себе</h3><p id="resumeAbout" data-editable="true"></p></section>
           <section><h3>Проекты</h3><div id="resumeProjects" class="resume-projects"></div></section>
-          <section class="resume-skills"><div><h3>Навыки</h3><div id="skillLegend" class="skill-legend"></div></div><div class="donut-wrap"><canvas id="skillsChart"></canvas></div></section>
+          <section id="resumeSkills" class="resume-skills"><div><h3>Навыки</h3><div id="skillLegend" class="skill-legend"></div></div><div class="donut-wrap"><canvas id="skillsChart"></canvas></div></section>
         </article>
         <aside class="resume-actions card">
-          <span class="kicker">Готово</span><h2>Ваше резюме</h2><p>Скопируйте текст или сохраните оформленную версию.</p>
+          <span class="kicker">Готово</span><h2>Ваше резюме</h2>
+          <p>Редактируйте текст прямо в макете и выберите формат экспорта.</p>
+
+          <label class="field-label" for="templateSelect">Шаблон PDF</label>
+          <select id="templateSelect" class="select-control">
+            <option value="visual">Визуальный</option>
+            <option value="ats">ATS-friendly</option>
+          </select>
+          <p id="templateHint" class="action-hint">Визуальный PDF сохраняется как оформленный документ.</p>
+
+          <button id="editBtn" class="btn btn-secondary">Редактировать текст</button>
           <button id="copyBtn" class="btn btn-secondary">Копировать текст</button>
+          <button id="txtBtn" class="btn btn-secondary">Скачать TXT</button>
           <button id="pdfBtn" class="btn btn-primary">Скачать PDF</button>
         </aside>
       </section>
     </section>
   </main>
 
-  <footer class="container footer"><p>Создано с GitHub GraphQL API · Auto Resume</p></footer>
+  <footer class="container footer"><p>Создано с GitHub GraphQL API · Auto Resume v1.1</p></footer>
   <script type="module" src="app.js"></script>
 </body>
 </html>

@@ -1,8 +1,13 @@
 import { els, state } from './js/config.js';
 import { applyData, getProfileData, isValidUsername, normalizeUsername } from './js/data.js';
+import { bindProjectSelector, initializeProjectSelection } from './js/projects.js';
 import { renderAll } from './js/render.js';
-import { copyResume, downloadPdf, generateResume } from './js/resume.js';
+import {
+  copyResume, downloadPdf, downloadText, generateResume, setResumeTemplate, toggleResumeEditing,
+} from './js/resume.js';
 import { showStatus } from './js/utils.js';
+
+bindProjectSelector();
 
 els.form.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -21,6 +26,7 @@ els.form.addEventListener('submit', async (event) => {
   try {
     const { data, cached } = await getProfileData(username);
     applyData(data);
+    initializeProjectSelection();
     renderAll();
     els.dashboard.classList.remove('hidden');
 
@@ -42,8 +48,11 @@ els.form.addEventListener('submit', async (event) => {
 });
 
 els.generate.addEventListener('click', generateResume);
-document.querySelector('#copyBtn').addEventListener('click', copyResume);
-document.querySelector('#pdfBtn').addEventListener('click', downloadPdf);
+els.editButton.addEventListener('click', toggleResumeEditing);
+els.copyButton.addEventListener('click', copyResume);
+els.textButton.addEventListener('click', downloadText);
+els.pdfButton.addEventListener('click', downloadPdf);
+els.templateSelect.addEventListener('change', (event) => setResumeTemplate(event.target.value));
 
 // Keep the current state available for debugging without exposing secrets.
 window.autoResumeState = state;
