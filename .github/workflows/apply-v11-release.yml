@@ -24,12 +24,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -f .release/v11.part.00
+          if [[ ! -f .release/v11.part.00 ]]; then
+            echo "Release archive is already applied."
+            exit 0
+          fi
           cat .release/v11.part.* | base64 --decode > /tmp/v11-release.tar.gz
           echo "8cfcfa4d2763912289b85954b494f8cb8214358db705e4ed281665d370e3aaa6  /tmp/v11-release.tar.gz" | sha256sum --check -
           tar -xzf /tmp/v11-release.tar.gz
           rm -rf .release
-          rm -f .github/workflows/apply-v11-release.yml
+          rm -f .github/workflows/cleanup-merged-branch.yml
           npm run verify
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
