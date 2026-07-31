@@ -5,14 +5,22 @@ on:
     branches: [main]
   pull_request:
     types: [closed]
+  issue_comment:
+    types: [created]
 
 permissions:
   contents: write
   pull-requests: read
+  issues: read
 
 jobs:
   cleanup:
-    if: github.event_name == 'push' || github.event.pull_request.merged == true
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true) ||
+      (github.event_name == 'issue_comment' &&
+       startsWith(github.event.comment.body, '/cleanup-branch ') &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
     runs-on: ubuntu-latest
     steps:
       - name: Delete merged agent branch
@@ -24,6 +32,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
           PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
         shell: bash
         run: |
           set -euo pipefail
@@ -31,7 +40,11 @@ jobs:
           head_ref="$PR_HEAD_REF"
           head_repo="$PR_HEAD_REPO"
 
-          if [[ "$EVENT_NAME" == "push" ]]; then
+          if [[ "$EVENT_NAME" == "issue_comment" ]]; then
+            head_ref="${COMMENT_BODY#/cleanup-branch }"
+            head_ref="$(printf '%s' "$head_ref" | xargs)"
+            head_repo="$REPOSITORY"
+          elif [[ "$EVENT_NAME" == "push" ]]; then
             pulls_json=$(curl --fail --silent --show-error \
               -H "Authorization: Bearer $GH_TOKEN" \
               -H "Accept: application/vnd.github+json" \
@@ -55,13 +68,12 @@ if merged:
             exit 0
           fi
 
-          encoded_ref=$(python -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$head_ref")
           status=$(curl --silent --output /tmp/delete-response --write-out '%{http_code}' \
             -X DELETE \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            "$API_URL/repos/$REPOSITORY/git/refs/heads/$encoded_ref")
+            "$API_URL/repos/$REPOSITORY/git/refs/heads/$head_ref")
 
           if [[ "$status" == "204" || "$status" == "404" || "$status" == "422" ]]; then
             echo "Branch cleanup completed with HTTP $status."
