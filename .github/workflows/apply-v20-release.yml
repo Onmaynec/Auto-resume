@@ -3,6 +3,9 @@ name: Apply Auto Resume v2.0
 on:
   push:
     branches: [agent/v2.0-job-matching-share]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
@@ -13,9 +16,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: agent/v2.0-job-matching-share
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Apply and verify release
+        env:
+          TARGET_BRANCH: ${{ github.head_ref || github.ref_name }}
         shell: bash
         run: |
           set -euo pipefail
@@ -32,4 +37,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Release Auto Resume v2.0"
-          git push
+          git push origin "HEAD:${TARGET_BRANCH}"
