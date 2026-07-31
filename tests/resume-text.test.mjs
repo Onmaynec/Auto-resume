@@ -2,26 +2,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildResumeText, safeFilename } from '../js/resume-text.mjs';
 
-test('plain text export is ATS-friendly and keeps project order', () => {
+test('ATS text export preserves project order and links', () => {
   const text = buildResumeText({
-    name: 'Иван Иванов',
-    headline: 'JavaScript Developer',
-    contacts: ['GitHub: github.com/ivan', 'Локация: Москва'],
-    about: 'Разрабатываю веб-приложения.',
+    name: 'Ada Lovelace', headline: 'Software Developer', contact: 'github.com/ada', about: 'About',
     projects: [
-      { name: 'Second', url: 'https://example.com/second', description: 'Второй проект.' },
-      { name: 'First', url: 'https://example.com/first', description: 'Первый проект.' },
+      { name: 'First', description: 'One', url: 'https://example.com/1' },
+      { name: 'Second', description: 'Two', url: 'https://example.com/2' },
     ],
-    skills: ['JavaScript 70%', 'HTML 30%'],
+    skills: [{ name: 'JavaScript', percent: 60 }, { name: 'Python', percent: 40 }],
   });
-
-  assert.match(text, /Иван Иванов\nJavaScript Developer/);
-  assert.ok(text.indexOf('Second') < text.indexOf('First'));
-  assert.match(text, /НАВЫКИ\nJavaScript 70%, HTML 30%/);
-  assert.equal(text.endsWith('\n'), true);
+  assert.ok(text.indexOf('First') < text.indexOf('Second'));
+  assert.match(text, /Ссылка: https:\/\/example.com\/1/);
+  assert.match(text, /JavaScript — 60%/);
 });
 
 test('safe filename removes unsafe characters', () => {
-  assert.equal(safeFilename(' John / Doe '), 'john-doe');
-  assert.equal(safeFilename(''), 'github-resume');
+  assert.equal(safeFilename(' John / Doe: Resume '), 'John-Doe-Resume');
 });

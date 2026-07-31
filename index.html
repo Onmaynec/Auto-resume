@@ -3,8 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Auto Resume — генератор редактируемого ATS-friendly резюме на основе публичного GitHub-профиля." />
-  <title>Auto Resume v1.1 — GitHub Resume Generator</title>
+  <meta name="description" content="Auto Resume v2.0 — анализ GitHub-профиля, вакансии и генерация публичного ATS-friendly резюме." />
+  <meta property="og:title" content="Auto Resume v2.0" />
+  <meta property="og:description" content="GitHub-профиль → адаптированное резюме с анализом вакансии и публичной ссылкой." />
+  <title>Auto Resume v2.0 — GitHub Resume Generator</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -15,22 +17,23 @@
 </head>
 <body>
   <div class="noise"></div>
+  <div id="sharedBanner" class="shared-banner hidden">Публичное резюме · данные зашиты в ссылку и не хранятся на сервере</div>
   <header class="hero container">
     <nav class="nav glass">
-      <a class="brand" href="#"><span class="brand-mark">AR</span><span>Auto Resume</span><span class="version-badge">v1.1</span></a>
+      <a class="brand" href="./"><span class="brand-mark">AR</span><span>Auto Resume <small>v2.0</small></span></a>
       <a class="nav-link" href="https://github.com/Onmaynec/Auto-resume" target="_blank" rel="noreferrer">GitHub ↗</a>
     </nav>
     <div class="hero-copy">
-      <div class="eyebrow">GitHub → профессиональное резюме</div>
-      <h1>Превратите профиль разработчика в впечатляющее резюме.</h1>
-      <p>Выберите лучшие проекты, настройте текст и экспортируйте визуальное или ATS-friendly резюме.</p>
+      <div class="eyebrow">GitHub + вакансия → персональное резюме</div>
+      <h1>Покажите рекрутеру именно те навыки, которые он ищет.</h1>
+      <p>Приложение анализирует профиль, историю языков и требования вакансии, выбирает релевантные проекты и создаёт редактируемое резюме.</p>
       <form id="searchForm" class="search glass">
         <label class="sr-only" for="username">GitHub username</label>
         <span class="search-icon">⌕</span>
-        <input id="username" autocomplete="off" placeholder="Введите GitHub username, например torvalds" required />
+        <input id="username" autocomplete="off" placeholder="GitHub username, например torvalds" required />
         <button class="btn btn-primary" type="submit">Анализировать</button>
       </form>
-      <p class="microcopy">Используются только публичные данные. GitHub-токен хранится только на сервере и не попадает в браузер.</p>
+      <p class="microcopy">Используются публичные данные. Серверный GitHub-токен никогда не отправляется в браузер.</p>
     </div>
   </header>
 
@@ -56,10 +59,28 @@
           <div id="heatmap" class="heatmap" aria-label="Календарь активности"></div>
           <div class="heatmap-legend"><span>Меньше</span><i data-level="0"></i><i data-level="1"></i><i data-level="2"></i><i data-level="3"></i><i data-level="4"></i><span>Больше</span></div>
         </article>
-        <article class="card activity-growth-card">
-          <div class="section-heading"><div><span class="kicker">Последние 12 месяцев</span><h2>Динамика активности</h2></div></div>
-          <div class="chart-wrap"><canvas id="growthChart"></canvas></div>
+        <article class="card">
+          <div class="section-heading"><div><span class="kicker">По месяцам</span><h2>Динамика активности</h2></div></div>
+          <div class="chart-wrap"><canvas id="activityChart"></canvas></div>
         </article>
+      </section>
+
+      <section class="card language-history-card">
+        <div class="section-heading"><div><span class="kicker">Реальная commit-активность</span><h2>История языков по месяцам</h2></div><span class="pill">по primary language репозитория</span></div>
+        <p class="section-note">График группирует реальные commit contributions пользователя по основному языку репозитория в каждом месяце.</p>
+        <div class="chart-wrap chart-wrap-large"><canvas id="languageHistoryChart"></canvas></div>
+        <div id="languageHistoryEmpty" class="empty-state hidden">История языков недоступна в экономном REST-режиме.</div>
+      </section>
+
+      <section class="card vacancy-card">
+        <div class="section-heading"><div><span class="kicker">Новая функция v2.0</span><h2>Анализ вакансии</h2></div><span class="pill">локальный анализ · без отправки текста ИИ</span></div>
+        <p class="section-note">Вставьте требования вакансии. Приложение найдёт технологии, сравнит их с профилем и поднимет самые релевантные проекты.</p>
+        <textarea id="vacancyText" rows="8" placeholder="Вставьте описание вакансии: стек, обязанности, обязательные и желательные навыки…"></textarea>
+        <div class="inline-actions">
+          <button id="analyzeVacancyBtn" class="btn btn-primary" type="button">Сопоставить с профилем</button>
+          <button id="clearVacancyBtn" class="btn btn-secondary" type="button">Очистить</button>
+        </div>
+        <div id="vacancyResult" class="vacancy-result hidden"></div>
       </section>
 
       <section class="card repo-section">
@@ -67,65 +88,38 @@
         <div id="repos" class="repo-grid"></div>
       </section>
 
-      <section id="projectBuilder" class="card project-builder">
-        <div class="section-heading">
-          <div><span class="kicker">Конструктор</span><h2>Проекты для резюме</h2><p class="section-description">Выберите до пяти проектов и настройте их порядок. Он будет сохранён в визуальном и ATS-шаблонах.</p></div>
-          <span id="selectedProjectCount" class="pill">0 / 5</span>
-        </div>
-        <div class="project-builder-grid">
-          <div>
-            <h3>Выберите проекты</h3>
-            <div id="projectOptions" class="project-options" aria-label="Выбор проектов"></div>
-          </div>
-          <div>
-            <h3>Порядок в резюме</h3>
-            <p class="builder-help">Перетаскивайте карточки или используйте кнопки со стрелками.</p>
-            <ol id="selectedProjects" class="selected-projects" aria-live="polite"></ol>
-          </div>
-        </div>
+      <section class="card project-builder-card">
+        <div class="section-heading"><div><span class="kicker">Конструктор</span><h2>Проекты для резюме</h2></div><span id="projectSelectionCount" class="pill"></span></div>
+        <p class="section-note">Выберите до пяти проектов. Перетаскивайте выбранные карточки или используйте стрелки, чтобы задать порядок.</p>
+        <div id="projectBuilder" class="project-builder"></div>
       </section>
 
       <section class="generate-panel glass">
-        <div><span class="kicker">Следующий шаг</span><h2>Соберите резюме за секунды</h2><p>Текст можно отредактировать после генерации, а выбранные проекты сохранят заданный порядок.</p></div>
+        <div><span class="kicker">Следующий шаг</span><h2>Соберите адаптированное резюме</h2><p>Если вакансия проанализирована, заголовок, описание и проекты будут ориентированы на её требования.</p></div>
         <button id="generateBtn" class="btn btn-primary btn-large">Сгенерировать резюме ✨</button>
       </section>
 
       <section id="resumeSection" class="resume-layout hidden">
-        <article id="resume" class="resume-paper" data-template="visual">
-          <header class="resume-header">
-            <div>
-              <p class="resume-label">GitHub Resume</p>
-              <h2 id="resumeName" data-editable="true"></h2>
-              <p id="resumeHeadline" class="resume-headline" data-editable="true"></p>
-            </div>
-            <img id="resumeAvatar" alt="Аватар пользователя" />
-          </header>
-          <div class="resume-contact" id="resumeContact"></div>
-          <section><h3>О себе</h3><p id="resumeAbout" data-editable="true"></p></section>
-          <section><h3>Проекты</h3><div id="resumeProjects" class="resume-projects"></div></section>
-          <section id="resumeSkills" class="resume-skills"><div><h3>Навыки</h3><div id="skillLegend" class="skill-legend"></div></div><div class="donut-wrap"><canvas id="skillsChart"></canvas></div></section>
-        </article>
+        <article id="resume" class="resume-paper resume-visual" aria-label="Редактируемое резюме"></article>
         <aside class="resume-actions card">
-          <span class="kicker">Готово</span><h2>Ваше резюме</h2>
-          <p>Редактируйте текст прямо в макете и выберите формат экспорта.</p>
-
-          <label class="field-label" for="templateSelect">Шаблон PDF</label>
-          <select id="templateSelect" class="select-control">
-            <option value="visual">Визуальный</option>
-            <option value="ats">ATS-friendly</option>
-          </select>
-          <p id="templateHint" class="action-hint">Визуальный PDF сохраняется как оформленный документ.</p>
-
-          <button id="editBtn" class="btn btn-secondary">Редактировать текст</button>
+          <span class="kicker">Редактор</span><h2>Ваше резюме</h2>
+          <p>Нажмите на любой текст в макете, чтобы изменить его.</p>
+          <div class="template-switch" role="group" aria-label="Шаблон резюме">
+            <button type="button" class="active" data-template-button="visual">Visual</button>
+            <button type="button" data-template-button="ats">ATS</button>
+          </div>
           <button id="copyBtn" class="btn btn-secondary">Копировать текст</button>
           <button id="txtBtn" class="btn btn-secondary">Скачать TXT</button>
-          <button id="pdfBtn" class="btn btn-primary">Скачать PDF</button>
+          <button id="visualPdfBtn" class="btn btn-primary">Визуальный PDF</button>
+          <button id="atsPdfBtn" class="btn btn-primary hidden">Сохранить ATS PDF</button>
+          <button id="shareBtn" class="btn btn-accent">Скопировать публичную ссылку</button>
+          <small>Публичная ссылка содержит резюме в URL-фрагменте. Сервер его не хранит и не получает.</small>
         </aside>
       </section>
     </section>
   </main>
 
-  <footer class="container footer"><p>Создано с GitHub GraphQL API · Auto Resume v1.1</p></footer>
+  <footer class="container footer"><p>GitHub GraphQL API · Auto Resume v2.0 · данные публичных ссылок хранятся только в URL</p></footer>
   <script type="module" src="app.js"></script>
 </body>
 </html>

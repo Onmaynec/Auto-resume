@@ -1,43 +1,32 @@
-function clean(value) {
-  return String(value || '').replace(/\s+/g, ' ').trim();
+export function buildResumeText(draft) {
+  const projects = (draft.projects || []).map((project) => [
+    project.name,
+    project.description,
+    project.url ? `Ссылка: ${project.url}` : '',
+  ].filter(Boolean).join('\n')).join('\n\n');
+  const skills = (draft.skills || []).map((item) => typeof item === 'string' ? item : `${item.name} — ${item.percent}%`).join(', ');
+  return [
+    draft.name,
+    draft.headline,
+    draft.contact,
+    '',
+    'О СЕБЕ',
+    draft.about,
+    '',
+    'ПРОЕКТЫ',
+    projects || 'Не указаны',
+    '',
+    'НАВЫКИ',
+    skills || 'Не указаны',
+  ].filter((line) => line !== undefined && line !== null).join('\n').trim();
 }
 
-export function buildResumeText(model) {
-  const lines = [];
-  const name = clean(model.name);
-  const headline = clean(model.headline);
-
-  if (name) lines.push(name);
-  if (headline) lines.push(headline);
-
-  const contacts = (model.contacts || []).map(clean).filter(Boolean);
-  if (contacts.length) lines.push('', contacts.join(' | '));
-
-  if (clean(model.about)) lines.push('', 'О СЕБЕ', clean(model.about));
-
-  const projects = (model.projects || []).filter((project) => clean(project.name) || clean(project.description));
-  if (projects.length) {
-    lines.push('', 'ПРОЕКТЫ');
-    projects.forEach((project) => {
-      const title = clean(project.name);
-      const url = clean(project.url);
-      const description = clean(project.description);
-      lines.push('', [title, url].filter(Boolean).join(' — '));
-      if (description) lines.push(description);
-    });
-  }
-
-  const skills = (model.skills || []).map(clean).filter(Boolean);
-  if (skills.length) lines.push('', 'НАВЫКИ', skills.join(', '));
-
-  return `${lines.join('\n').replace(/\n{3,}/g, '\n\n').trim()}\n`;
-}
-
-export function safeFilename(value, fallback = 'github-resume') {
-  const normalized = String(value || '')
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-zа-яё0-9_-]+/gi, '-')
-    .replace(/^-+|-+$/g, '');
-  return normalized || fallback;
+export function safeFilename(value, fallback = 'resume') {
+  const result = String(value || '')
+    .normalize('NFKD')
+    .replace(/[^a-zA-Z0-9а-яА-ЯёЁ_-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 80);
+  return result || fallback;
 }

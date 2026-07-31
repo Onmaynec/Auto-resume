@@ -1,126 +1,105 @@
-import { els, MAX_RESUME_PROJECTS, state } from './config.js';
+import { els, state } from './config.js';
 import {
-  createDefaultSelection, moveSelection, normalizeSelection, reorderSelection,
-  repoKey, resolveSelectedProjects, toggleSelection,
+  PROJECT_LIMIT, moveSelection, reorderSelection, resolveSelectedRepos, toggleSelection,
 } from './project-selection.mjs';
-import { escapeHtml, score, showStatus } from './utils.js';
+import { escapeHtml, score } from './utils.js';
 
-let draggedProjectKey = '';
+let draggedId = null;
 
-export function initializeProjectSelection() {
-  state.projectSelection = createDefaultSelection(state.repos, score, MAX_RESUME_PROJECTS);
-  renderProjectSelector();
+export function renderProjectBuilder() {
+  const selectedSet = new Set(state.selectedProjects);
+  const sorted = [...state.repos].sort((a, b) => {
+    const aIndex = state.selectedProjects.indexOf(a.full_name || a.name);
+    const bIndex = state.selectedProjects.indexOf(b.full_name || b.name);
+    if (aIndex >= 0 && bIndex >= 0) return aIndex - bIndex;
+    if (aIndex >= 0) return -1;
+    if (bIndex >= 0) return 1;
+    return score(b) - score(a);
+  });
+
+  els.projectSelectionCount.textContent = `${state.selectedProjects.length}/${PROJECT_LIMIT} выбрано`;
+  els.projectBuilder.innerHTML = sorted.map((repo) => {
+    const id = repo.full_name || repo.name;
+    const selected = selectedSet.has(id);
+    const order = state.selectedProjects.indexOf(id);
+    return `
+      <article class="project-picker ${selected ? 'selected' : ''}" draggable="${selected}" data-project-id="${escapeHtml(id)}">
+        <label class="project-check">
+          <input type="checkbox" ${selected ? 'checked' : ''} data-project-toggle="${escapeHtml(id)}" ${!selected && state.selectedProjects.length >= PROJECT_LIMIT ? 'disabled' : ''}>
+          <span>${selected ? order + 1 : '—'}</span>
+        </label>
+        <div class="project-picker-copy">
+          <strong>${escapeHtml(repo.name)}</strong>
+          <small>${escapeHtml(repo.description || 'Описание не добавлено')}</small>
+          <span>${escapeHtml(repo.language || 'Other')} · ★ ${repo.stargazers_count || 0} · ⑂ ${repo.forks_count || 0}</span>
+        </div>
+        <div class="project-order-actions ${selected ? '' : 'hidden'}">
+          <button type="button" aria-label="Выше" data-move-project="-1" data-project-id="${escapeHtml(id)}" ${order <= 0 ? 'disabled' : ''}>↑</button>
+          <button type="button" aria-label="Ниже" data-move-project="1" data-project-id="${escapeHtml(id)}" ${order < 0 || order >= state.selectedProjects.length - 1 ? 'disabled' : ''}>↓</button>
+          <span class="drag-handle" title="Перетащите для сортировки">⋮⋮</span>
+        </div>
+      </article>`;
+  }).join('');
 }
 
-export function bindProjectSelector() {
-  els.projectOptions.addEventListener('change', (event) => {
-    const checkbox = event.target.closest('input[data-project-key]');
-    if (!checkbox) return;
-
-    const previous = state.projectSelection;
-    const next = toggleSelection(previous, checkbox.dataset.projectKey, checkbox.checked, MAX_RESUME_PROJECTS);
-    const rejected = checkbox.checked && next.length === previous.length && !previous.includes(checkbox.dataset.projectKey);
-
-    if (rejected) {
-      checkbox.checked = false;
-      showStatus(`В резюме можно добавить не более ${MAX_RESUME_PROJECTS} проектов.`, 'warning');
-      return;
-    }
-
-    state.projectSelection = normalizeSelection(next, state.repos, MAX_RESUME_PROJECTS);
-    renderProjectSelector();
+export function bindProjectBuilder() {
+  els.projectBuilder.addEventListener('change', (event) => {
+    const input = event.target.closest('[data-project-toggle]');
+    if (!input) return;
+    state.selectedProjects = toggleSelection(
+      state.selectedProjects,
+      input.dataset.projectToggle,
+      input.checked,
+      state.repos,
+    );
+    renderProjectBuilder();
   });
 
-  els.selectedProjects.addEventListener('click', (event) => {
-    const button = event.target.closest('button[data-project-key]');
+  els.projectBuilder.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-move-project]');
     if (!button) return;
-
-    const direction = Number(button.dataset.direction);
-    if (Number.isFinite(direction)) {
-      state.projectSelection = moveSelection(state.projectSelection, button.dataset.projectKey, direction);
-      renderProjectSelector();
-      return;
-    }
-
-    if (button.dataset.action === 'remove') {
-      state.projectSelection = toggleSelection(
-        state.projectSelection,
-        button.dataset.projectKey,
-        false,
-        MAX_RESUME_PROJECTS,
-      );
-      renderProjectSelector();
-    }
+    state.selectedProjects = moveSelection(
+      state.selectedProjects,
+      button.dataset.projectId,
+      Number(button.dataset.moveProject),
+    );
+    renderProjectBuilder();
   });
 
-  els.selectedProjects.addEventListener('dragstart', (event) => {
-    const item = event.target.closest('[data-project-key]');
-    if (!item) return;
-    draggedProjectKey = item.dataset.projectKey;
-    item.classList.add('is-dragging');
+  els.projectBuilder.addEventListener('dragstart', (event) => {
+    const item = event.target.closest('[data-project-id]');
+    if (!item || !state.selectedProjects.includes(item.dataset.projectId)) return;
+    draggedId = item.dataset.projectId;
+    item.classList.add('dragging');
     event.dataTransfer.effectAllowed = 'move';
   });
 
-  els.selectedProjects.addEventListener('dragend', (event) => {
-    event.target.closest('[data-project-key]')?.classList.remove('is-dragging');
-    draggedProjectKey = '';
-  });
-
-  els.selectedProjects.addEventListener('dragover', (event) => {
-    if (draggedProjectKey) event.preventDefault();
-  });
-
-  els.selectedProjects.addEventListener('drop', (event) => {
+  els.projectBuilder.addEventListener('dragover', (event) => {
+    const item = event.target.closest('[data-project-id]');
+    if (!item || !draggedId || !state.selectedProjects.includes(item.dataset.projectId)) return;
     event.preventDefault();
-    const target = event.target.closest('[data-project-key]');
-    if (!target || !draggedProjectKey) return;
-    state.projectSelection = reorderSelection(
-      state.projectSelection,
-      draggedProjectKey,
-      target.dataset.projectKey,
-    );
-    renderProjectSelector();
+    item.classList.add('drag-target');
+  });
+
+  els.projectBuilder.addEventListener('dragleave', (event) => {
+    event.target.closest('[data-project-id]')?.classList.remove('drag-target');
+  });
+
+  els.projectBuilder.addEventListener('drop', (event) => {
+    const item = event.target.closest('[data-project-id]');
+    if (!item || !draggedId) return;
+    event.preventDefault();
+    state.selectedProjects = reorderSelection(state.selectedProjects, draggedId, item.dataset.projectId);
+    draggedId = null;
+    renderProjectBuilder();
+  });
+
+  els.projectBuilder.addEventListener('dragend', () => {
+    draggedId = null;
+    renderProjectBuilder();
   });
 }
 
-export function renderProjectSelector() {
-  state.projectSelection = normalizeSelection(state.projectSelection, state.repos, MAX_RESUME_PROJECTS);
-  const selected = new Set(state.projectSelection);
-  const ranked = [...state.repos].sort((a, b) => score(b) - score(a));
-  const atLimit = state.projectSelection.length >= MAX_RESUME_PROJECTS;
-
-  els.projectOptions.innerHTML = ranked.map((repo) => {
-    const key = repoKey(repo);
-    const checked = selected.has(key);
-    return `
-      <label class="project-option ${checked ? 'is-selected' : ''}">
-        <input type="checkbox" data-project-key="${escapeHtml(key)}" ${checked ? 'checked' : ''} ${atLimit && !checked ? 'disabled' : ''}>
-        <span class="project-option-copy">
-          <strong>${escapeHtml(repo.name)}</strong>
-          <small>${escapeHtml(repo.description || 'Описание не добавлено.')}</small>
-        </span>
-        <span class="project-option-meta">★ ${Number(repo.stargazers_count || 0)}</span>
-      </label>`;
-  }).join('') || '<p class="empty-state">Нет доступных проектов.</p>';
-
-  const selectedRepos = getSelectedProjects();
-  els.selectedProjects.innerHTML = selectedRepos.map((repo, index) => {
-    const key = repoKey(repo);
-    return `
-      <li class="selected-project" draggable="true" data-project-key="${escapeHtml(key)}">
-        <span class="drag-handle" aria-hidden="true">⋮⋮</span>
-        <span class="selected-project-copy"><strong>${index + 1}. ${escapeHtml(repo.name)}</strong><small>${escapeHtml(repo.language || 'Other')}</small></span>
-        <span class="selected-project-actions">
-          <button type="button" class="icon-button" data-project-key="${escapeHtml(key)}" data-direction="-1" ${index === 0 ? 'disabled' : ''} aria-label="Поднять проект">↑</button>
-          <button type="button" class="icon-button" data-project-key="${escapeHtml(key)}" data-direction="1" ${index === selectedRepos.length - 1 ? 'disabled' : ''} aria-label="Опустить проект">↓</button>
-          <button type="button" class="icon-button danger-button" data-project-key="${escapeHtml(key)}" data-action="remove" aria-label="Удалить проект из резюме">×</button>
-        </span>
-      </li>`;
-  }).join('') || '<li class="empty-state">Выберите хотя бы один проект.</li>';
-
-  els.selectedProjectCount.textContent = `${state.projectSelection.length} / ${MAX_RESUME_PROJECTS}`;
-}
-
-export function getSelectedProjects() {
-  return resolveSelectedProjects(state.repos, state.projectSelection);
+export function selectedRepos() {
+  return resolveSelectedRepos(state.repos, state.selectedProjects);
 }

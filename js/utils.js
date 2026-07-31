@@ -1,48 +1,31 @@
-import { els, state } from './config.js';
+import { state } from './config.js';
 
 export function escapeHtml(value = '') {
-  return String(value).replace(/[&<>'"]/g, (character) => ({
+  return String(value).replace(/[&<>'"]/g, (char) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;',
-  }[character]));
+  }[char]));
 }
 
-export function showStatus(text, variant = '') {
-  els.status.textContent = text;
-  els.status.classList.remove('hidden', 'error', 'warning', 'success');
-  if (variant) els.status.classList.add(variant);
+export function languageStats() {
+  const total = Object.values(state.languages).reduce((sum, value) => sum + Number(value || 0), 0) || 1;
+  return Object.entries(state.languages)
+    .map(([name, value]) => ({ name, value: Number(value || 0), percent: Math.round(Number(value || 0) / total * 100) }))
+    .sort((a, b) => b.value - a.value);
 }
 
-export function toast(button, text) {
-  const oldText = button.textContent;
-  button.textContent = text;
-  setTimeout(() => { button.textContent = oldText; }, 1800);
-}
-
-export function formatRateLimitMessage(resetAt) {
-  if (!resetAt) return 'Лимит GitHub API исчерпан. Попробуйте позже.';
-  const date = new Date(resetAt);
-  return `Лимит GitHub API исчерпан. Он восстановится примерно в ${date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}.`;
+export function score(repo) {
+  const pushed = new Date(repo.pushed_at || repo.updated_at || 0).getTime();
+  const months = Number.isFinite(pushed) ? (Date.now() - pushed) / 2_629_746_000 : 24;
+  return Number(repo.stargazers_count || 0) * 5
+    + Number(repo.forks_count || 0) * 3
+    + Math.max(0, 24 - months)
+    + (repo.description ? 4 : 0)
+    + (repo.homepage ? 3 : 0)
+    - (repo.archived ? 30 : 0);
 }
 
 export function sum(key) {
   return state.repos.reduce((total, repo) => total + Number(repo[key] || 0), 0);
-}
-
-export function monthsAgo(date) {
-  if (!date) return 99;
-  return (Date.now() - new Date(date).getTime()) / (30.44 * 86_400_000);
-}
-
-export function score(repo) {
-  const freshness = Math.max(0, 12 - monthsAgo(repo.pushed_at)) * 2;
-  return repo.stargazers_count * 5 + repo.forks_count * 3 + freshness + (repo.description ? 3 : 0);
-}
-
-export function languageStats() {
-  const total = Object.values(state.languages).reduce((sumValue, value) => sumValue + value, 0) || 1;
-  return Object.entries(state.languages)
-    .map(([name, value]) => ({ name, value, percent: Math.round(value / total * 100) }))
-    .sort((a, b) => b.value - a.value);
 }
 
 export function contributionLevel(day, max) {
@@ -65,4 +48,38 @@ export function toDateKey(date) {
 
 export function formatDate(date) {
   return new Date(`${date}T00:00:00`).toLocaleDateString('ru-RU');
+}
+
+export function formatRateLimitMessage(resetAt) {
+  if (!resetAt) return 'Лимит GitHub API исчерпан. Попробуйте позже.';
+  const time = new Date(resetAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  return `Лимит GitHub API исчерпан. Он восстановится примерно в ${time}.`;
+}
+
+export function showStatus(message, type = 'info') {
+  const element = document.querySelector('#status');
+  element.textContent = message;
+  element.className = `status ${type}`;
+}
+
+export function hideStatus() {
+  document.querySelector('#status').classList.add('hidden');
+}
+
+export function toast(button, text) {
+  const original = button.textContent;
+  button.textContent = text;
+  setTimeout(() => { button.textContent = original; }, 1800);
+}
+
+export function downloadBlob(content, filename, type = 'text/plain;charset=utf-8') {
+  const blob = content instanceof Blob ? content : new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 500);
 }

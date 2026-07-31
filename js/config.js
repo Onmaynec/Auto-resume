@@ -2,7 +2,6 @@ export const REST_API = 'https://api.github.com';
 export const PROXY_ENDPOINT = '/api/github';
 export const CACHE_TTL = 15 * 60 * 1000;
 export const USERNAME_RE = /^[a-z\d](?:[a-z\d-]{0,37}[a-z\d])?$/i;
-export const MAX_RESUME_PROJECTS = 5;
 
 export const state = {
   user: null,
@@ -10,15 +9,19 @@ export const state = {
   contributions: { total: 0, commits: 0, restricted: 0, calendar: [] },
   languages: {},
   monthly: {},
+  languageHistory: [],
+  selectedProjects: [],
+  vacancyAnalysis: null,
+  resumeDraft: null,
+  resumeTemplate: 'visual',
   charts: {},
   source: '',
   rateLimit: null,
-  projectSelection: [],
-  resumeEditing: false,
-  resumeTemplate: 'visual',
+  sharedMode: false,
 };
 
 export const $ = (selector) => document.querySelector(selector);
+export const $$ = (selector) => [...document.querySelectorAll(selector)];
 
 export const els = {
   form: $('#searchForm'),
@@ -33,15 +36,13 @@ export const els = {
   repos: $('#repos'),
   repoCount: $('#repoCount'),
   commitCount: $('#commitCount'),
-  projectOptions: $('#projectOptions'),
-  selectedProjects: $('#selectedProjects'),
-  selectedProjectCount: $('#selectedProjectCount'),
+  projectBuilder: $('#projectBuilder'),
+  projectSelectionCount: $('#projectSelectionCount'),
+  vacancyText: $('#vacancyText'),
+  vacancyButton: $('#analyzeVacancyBtn'),
+  vacancyResult: $('#vacancyResult'),
   generate: $('#generateBtn'),
   resumeSection: $('#resumeSection'),
-  templateSelect: $('#templateSelect'),
-  templateHint: $('#templateHint'),
-  editButton: $('#editBtn'),
-  copyButton: $('#copyBtn'),
-  textButton: $('#txtBtn'),
-  pdfButton: $('#pdfBtn'),
+  resume: $('#resume'),
+  sharedBanner: $('#sharedBanner'),
 };
