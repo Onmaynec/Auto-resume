@@ -1,0 +1,36 @@
+name: Delete v2.0 work branch
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  cleanup:
+    if: github.head_ref == 'agent/v2.0-job-matching-share'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete work branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          API_URL: ${{ github.api_url }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --output /tmp/delete-response --write-out '%{http_code}' \
+            -X DELETE \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "$API_URL/repos/$REPOSITORY/git/refs/heads/agent%2Fv2.0-job-matching-share")
+          if [[ "$status" == "204" || "$status" == "404" ]]; then
+            echo "Work branch deleted with HTTP $status."
+            exit 0
+          fi
+          cat /tmp/delete-response
+          exit 1
