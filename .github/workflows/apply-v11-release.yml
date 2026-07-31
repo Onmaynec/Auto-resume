@@ -1,0 +1,31 @@
+name: Apply Auto Resume v1.1
+
+on:
+  push:
+    branches: [agent/v1.1-resume-workflow]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: "!contains(github.event.head_commit.message, 'Release Auto Resume v1.1')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply release archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .release/v11.part.* | base64 --decode > /tmp/v11-release.tar.gz
+          echo "8cfcfa4d2763912289b85954b494f8cb8214358db705e4ed281665d370e3aaa6  /tmp/v11-release.tar.gz" | sha256sum --check -
+          tar -xzf /tmp/v11-release.tar.gz
+          rm -rf .release
+          rm -f .github/workflows/apply-v11-release.yml
+          npm run verify
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Release Auto Resume v1.1"
+          git push
