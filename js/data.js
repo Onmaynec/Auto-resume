@@ -38,6 +38,9 @@ export function applyData(data) {
   };
   state.source = data.source || 'unknown';
   state.rateLimit = data.rateLimit || null;
+  state.projectSelection = [];
+  state.resumeEditing = false;
+  state.resumeTemplate = 'visual';
   aggregateLanguages();
   buildMonthlyActivity();
 }

@@ -1,6 +1,6 @@
 import { $, els, state } from './config.js';
 import {
-  contributionLevel, escapeHtml, formatDate, score, sum,
+  contributionLevel, escapeHtml, formatDate, languageStats, score, sum,
 } from './utils.js';
 
 export function renderAll() {
@@ -77,15 +77,14 @@ function renderHeatmap() {
 function renderGrowth() {
   if (state.charts.growth) state.charts.growth.destroy();
   const labels = Object.keys(state.monthly).map((key) => new Date(`${key}-01T00:00:00`).toLocaleDateString('ru-RU', { month: 'short' }));
-  let cumulative = 0;
-  const data = Object.values(state.monthly).map((value) => (cumulative += value));
+  const data = Object.values(state.monthly);
 
   state.charts.growth = new Chart($('#growthChart'), {
     type: 'line',
     data: {
       labels,
       datasets: [{
-        label: 'Накопленный вклад',
+        label: 'Вклады за месяц',
         data,
         fill: true,
         tension: 0.38,
