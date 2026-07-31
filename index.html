@@ -30,7 +30,7 @@
         <input id="username" autocomplete="off" placeholder="Введите GitHub username, например torvalds" required />
         <button class="btn btn-primary" type="submit">Анализировать</button>
       </form>
-      <p class="microcopy">Используются только публичные данные GitHub. Без регистрации.</p>
+      <p class="microcopy">Используются только публичные данные. GitHub-токен хранится только на сервере и не попадает в браузер.</p>
     </div>
   </header>
 
@@ -57,7 +57,7 @@
           <div class="heatmap-legend"><span>Меньше</span><i data-level="0"></i><i data-level="1"></i><i data-level="2"></i><i data-level="3"></i><i data-level="4"></i><span>Больше</span></div>
         </article>
         <article class="card skill-growth-card">
-          <div class="section-heading"><div><span class="kicker">Динамика</span><h2>Рост навыков</h2></div></div>
+          <div class="section-heading"><div><span class="kicker">Последние 12 месяцев</span><h2>Динамика профессионального роста</h2></div></div>
           <div class="chart-wrap"><canvas id="growthChart"></canvas></div>
         </article>
       </section>
@@ -89,7 +89,7 @@
     </section>
   </main>
 
-  <footer class="container footer"><p>Создано с данными GitHub API · Auto Resume</p></footer>
-  <script src="app.js"></script>
+  <footer class="container footer"><p>Создано с GitHub GraphQL API · Auto Resume</p></footer>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

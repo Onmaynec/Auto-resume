@@ -1,28 +1,49 @@
-const API='https://api.github.com';
-const state={user:null,repos:[],events:[],languages:{},monthly:{},charts:{}};
-const $=s=>document.querySelector(s);
-const els={form:$('#searchForm'),username:$('#username'),status:$('#status'),dashboard:$('#dashboard'),profile:$('#profileCard'),metrics:$('#metrics'),tipsCard:$('#tipsCard'),tips:$('#tips'),heatmap:$('#heatmap'),repos:$('#repos'),repoCount:$('#repoCount'),commitCount:$('#commitCount'),generate:$('#generateBtn'),resumeSection:$('#resumeSection')};
+import { els, state } from './js/config.js';
+import { applyData, getProfileData, isValidUsername, normalizeUsername } from './js/data.js';
+import { renderAll } from './js/render.js';
+import { copyResume, downloadPdf, generateResume } from './js/resume.js';
+import { showStatus } from './js/utils.js';
 
-els.form.addEventListener('submit',e=>{e.preventDefault();loadProfile(els.username.value.trim())});
-els.generate.addEventListener('click',generateResume);$('#copyBtn').addEventListener('click',copyResume);$('#pdfBtn').addEventListener('click',downloadPdf);
+els.form.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const username = normalizeUsername(els.username.value);
 
-async function api(path){const r=await fetch(`${API}${path}`,{headers:{Accept:'application/vnd.github+json'}});if(!r.ok){if(r.status===404)throw new Error('Пользователь не найден. Проверьте username.');if(r.status===403)throw new Error('Лимит GitHub API исчерпан. Попробуйте позже или запустите проект локально с токеном.');throw new Error(`GitHub API: ${r.status}`)}return r.json()}
-async function loadProfile(username){if(!username)return;showStatus('Анализируем профиль и репозитории…');els.dashboard.classList.add('hidden');els.form.querySelector('button').disabled=true;try{const user=await api(`/users/${encodeURIComponent(username)}`);const repos=await api(`/users/${encodeURIComponent(username)}/repos?per_page=100&sort=updated`);const events=await api(`/users/${encodeURIComponent(username)}/events/public?per_page=100`).catch(()=>[]);state.user=user;state.repos=repos.filter(r=>!r.fork);state.events=events;await hydrateLanguages();buildMonthlyActivity();renderAll();els.dashboard.classList.remove('hidden');hideStatus();}catch(err){showStatus(err.message,true)}finally{els.form.querySelector('button').disabled=false}}
-async function hydrateLanguages(){state.languages={};const top=[...state.repos].sort((a,b)=>(b.stargazers_count+b.forks_count)-(a.stargazers_count+a.forks_count)).slice(0,18);await Promise.all(top.map(async repo=>{try{const langs=await api(`/repos/${repo.full_name}/languages`);repo.languages=langs;Object.entries(langs).forEach(([k,v])=>state.languages[k]=(state.languages[k]||0)+v)}catch{repo.languages=repo.language?{[repo.language]:1}:{};if(repo.language)state.languages[repo.language]=(state.languages[repo.language]||0)+1}}));state.repos.forEach(r=>{if(!r.languages&&r.language)state.languages[r.language]=(state.languages[r.language]||0)+1})}
-function buildMonthlyActivity(){const months={};for(let i=11;i>=0;i--){const d=new Date();d.setMonth(d.getMonth()-i);months[d.toISOString().slice(0,7)]=0}state.events.forEach(e=>{const key=e.created_at.slice(0,7);if(key in months)months[key]+=(e.type==='PushEvent'?(e.payload?.size||1):.35)});state.monthly=months}
-function renderAll(){renderProfile();renderMetrics();renderTips();renderHeatmap();renderGrowth();renderRepos()}
-function renderProfile(){const u=state.user;els.profile.innerHTML=`<img class="avatar" src="${u.avatar_url}" alt="${escapeHtml(u.login)}"><div><span class="kicker">Профиль</span><h2>${escapeHtml(u.name||u.login)}</h2><p>${escapeHtml(u.bio||'Описание профиля пока не добавлено.')}</p><div class="profile-meta"><span>📍 ${escapeHtml(u.location||'Не указано')}</span><span>👥 ${u.followers} подписчиков</span><span>📦 ${u.public_repos} репозиториев</span></div></div>`}
-function renderMetrics(){const stars=sum('stargazers_count'),forks=sum('forks_count'),commits=estimatedCommits(),langs=Object.keys(state.languages).length;els.metrics.innerHTML=[['⭐',stars,'Звёзд'],['⑂',forks,'Форков'],['⌁',commits,'Коммитов*'],['◈',langs,'Языков']].map(([i,v,l])=>`<div class="metric"><span>${i}</span><strong>${v}</strong><span>${l}</span></div>`).join('')}
-function renderTips(){const u=state.user,r=state.repos,t=[];if(!u.bio)t.push('Ваш профиль слабо заполнен — добавьте био с ролью, стеком и специализацией.');if(!u.location)t.push('Укажите локацию или формат работы: remote / hybrid / onsite.');if(r.length<3)t.push('Добавьте или закрепите минимум 3 содержательных проекта.');if(r.filter(x=>x.description).length<Math.min(5,r.length))t.push('Добавьте понятные описания репозиториев: задача, технологии и результат.');if(sum('stargazers_count')===0)t.push('Улучшите README: демо, скриншоты и инструкция запуска повышают доверие к проектам.');els.tips.innerHTML=t.map(x=>`<div class="tip"><span>💡</span><span>${x}</span></div>`).join('');els.tipsCard.classList.toggle('hidden',!t.length)}
-function renderHeatmap(){const days=364,counts=Array(days).fill(0),now=new Date();state.events.forEach(e=>{const delta=Math.floor((now-new Date(e.created_at))/86400000);if(delta>=0&&delta<days)counts[days-1-delta]+=(e.type==='PushEvent'?(e.payload?.size||1):1)});const max=Math.max(...counts,1);els.heatmap.innerHTML=counts.map((c,i)=>{const level=c?Math.min(4,Math.ceil(c/max*4)):0;const d=new Date(now);d.setDate(now.getDate()-(days-1-i));return `<i class="heat-cell" data-level="${level}" title="${d.toLocaleDateString('ru-RU')}: ${c} событий"></i>`}).join('');els.commitCount.textContent=`≈ ${estimatedCommits()} коммитов`}
-function renderGrowth(){if(state.charts.growth)state.charts.growth.destroy();const labels=Object.keys(state.monthly).map(k=>new Date(`${k}-01`).toLocaleDateString('ru-RU',{month:'short'}));let total=0;const data=Object.values(state.monthly).map(v=>total+=v);state.charts.growth=new Chart($('#growthChart'),{type:'line',data:{labels,datasets:[{label:'Индекс активности',data,fill:true,tension:.38,borderColor:'#7c5cff',backgroundColor:'rgba(124,92,255,.15)',pointBackgroundColor:'#29d3a2'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#8f9bad'}},y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#8f9bad'}}}}})}
-function score(repo){return repo.stargazers_count*5+repo.forks_count*3+Math.max(0,12-monthsAgo(repo.pushed_at))*2+(repo.description?3:0)}
-function renderRepos(){const sorted=[...state.repos].sort((a,b)=>score(b)-score(a));els.repoCount.textContent=`${sorted.length} проектов`;els.repos.innerHTML=sorted.slice(0,12).map(r=>`<article class="repo"><a href="${r.html_url}" target="_blank" rel="noreferrer">${escapeHtml(r.name)} ↗</a><p>${escapeHtml(r.description||'Описание не добавлено.')}</p><div class="repo-footer"><span><i class="language-dot"></i>${escapeHtml(r.language||'Other')}</span><span>★ ${r.stargazers_count} · ⑂ ${r.forks_count}</span></div></article>`).join('')||'<p>Публичные репозитории не найдены.</p>'}
-function generateResume(){const u=state.user,topLangs=languageStats().slice(0,3),projects=[...state.repos].sort((a,b)=>score(b)-score(a)).slice(0,5);$('#resumeName').textContent=u.name||u.login;$('#resumeHeadline').textContent=`${topLangs.map(x=>x.name).join(' / ')||'Software'} Developer`;$('#resumeAvatar').src=u.avatar_url;$('#resumeContact').innerHTML=[u.location&&`📍 ${escapeHtml(u.location)}`,`🔗 github.com/${escapeHtml(u.login)}`,`${u.followers} подписчиков`,`${estimatedCommits()} коммитов за период*`].filter(Boolean).map(x=>`<span>${x}</span>`).join('');$('#resumeAbout').textContent=buildAbout();$('#resumeProjects').innerHTML=projects.map(r=>`<div class="resume-project"><h4>${escapeHtml(r.name)}</h4><p>${escapeHtml(r.description||`Проект на ${r.language||'современном технологическом стеке'}.`)} Стек: ${escapeHtml(Object.keys(r.languages||{}).slice(0,4).join(', ')||r.language||'не указан')}. ${r.stargazers_count} ★, ${r.forks_count} форков.</p></div>`).join('');renderSkills();els.resumeSection.classList.remove('hidden');setTimeout(()=>els.resumeSection.scrollIntoView({behavior:'smooth'}),80)}
-function buildAbout(){const u=state.user,langs=languageStats().slice(0,3).map(x=>x.name).join(', '),active=estimatedCommits();return `${u.bio?u.bio+' ':''}Разработчик с публичным портфолио из ${state.repos.length} проектов. Основной технологический фокус: ${langs||'разработка программного обеспечения'}. За анализируемый период проявил ${active>80?'высокую':active>25?'стабильную':'развивающуюся'} активность — около ${active} коммитов и вкладов в открытые репозитории. Ориентирован на создание практичных решений, развитие качества кода и понятную презентацию проектов.`}
-function renderSkills(){const stats=languageStats().slice(0,8);$('#skillLegend').innerHTML=stats.map(x=>`<div class="skill-item"><span>${escapeHtml(x.name)}</span><strong>${x.percent}%</strong></div>`).join('');if(state.charts.skills)state.charts.skills.destroy();state.charts.skills=new Chart($('#skillsChart'),{type:'doughnut',data:{labels:stats.map(x=>x.name),datasets:[{data:stats.map(x=>x.value),backgroundColor:['#7c5cff','#29d3a2','#4da3ff','#ffb84d','#ff6b7a','#ad7cff','#59d6ff','#87e36b'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false}}}})}
-async function copyResume(){const text=`${$('#resumeName').textContent}\n${$('#resumeHeadline').textContent}\n\nО СЕБЕ\n${$('#resumeAbout').textContent}\n\nПРОЕКТЫ\n${[...document.querySelectorAll('.resume-project')].map(x=>`${x.querySelector('h4').textContent}: ${x.querySelector('p').textContent}`).join('\n\n')}\n\nНАВЫКИ\n${languageStats().slice(0,8).map(x=>`${x.name} — ${x.percent}%`).join(', ')}`;await navigator.clipboard.writeText(text);toast($('#copyBtn'),'Скопировано ✓')}
-async function downloadPdf(){const btn=$('#pdfBtn');btn.disabled=true;btn.textContent='Создаём PDF…';try{const canvas=await html2canvas($('#resume'),{scale:2,useCORS:true,backgroundColor:'#ffffff'});const img=canvas.toDataURL('image/png');const {jsPDF}=window.jspdf;const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});const pw=198,h=canvas.height*pw/canvas.width;let left=h,pos=6;pdf.addImage(img,'PNG',6,pos,pw,h);left-=285;while(left>0){pos=left-h+6;pdf.addPage();pdf.addImage(img,'PNG',6,pos,pw,h);left-=285}pdf.save(`${state.user.login}-github-resume.pdf`)}finally{btn.disabled=false;btn.textContent='Скачать PDF'}}
-function languageStats(){const total=Object.values(state.languages).reduce((a,b)=>a+b,0)||1;return Object.entries(state.languages).map(([name,value])=>({name,value,percent:Math.round(value/total*100)})).sort((a,b)=>b.value-a.value)}
-function estimatedCommits(){return state.events.reduce((n,e)=>n+(e.type==='PushEvent'?(e.payload?.size||1):0),0)}
-function monthsAgo(date){return (Date.now()-new Date(date))/(30.44*86400000)}function sum(k){return state.repos.reduce((n,r)=>n+(r[k]||0),0)}function escapeHtml(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[c]))}function showStatus(t,error=false){els.status.textContent=t;els.status.classList.remove('hidden');els.status.classList.toggle('error',error)}function hideStatus(){els.status.classList.add('hidden')}function toast(btn,text){const old=btn.textContent;btn.textContent=text;setTimeout(()=>btn.textContent=old,1800)}
+  if (!isValidUsername(username)) {
+    showStatus('Некорректный GitHub username. Используйте латинские буквы, цифры и дефисы.', 'error');
+    return;
+  }
+
+  showStatus('Анализируем профиль, проекты и вклад за последние 12 месяцев…');
+  els.dashboard.classList.add('hidden');
+  els.resumeSection.classList.add('hidden');
+  els.form.querySelector('button').disabled = true;
+
+  try {
+    const { data, cached } = await getProfileData(username);
+    applyData(data);
+    renderAll();
+    els.dashboard.classList.remove('hidden');
+
+    if (data.source === 'github-graphql') {
+      const remaining = data.rateLimit?.remaining;
+      const suffix = Number.isFinite(remaining) ? ` Осталось запросов GitHub: ${remaining}.` : '';
+      showStatus(`${cached ? 'Показаны кэшированные данные.' : 'Годовая статистика загружена через безопасный API-прокси.'}${suffix}`, 'success');
+    } else {
+      showStatus(
+        'Включён экономный режим: профиль и репозитории загружены двумя публичными запросами. Для точного годового heatmap разверните проект на Vercel и добавьте GITHUB_TOKEN.',
+        'warning',
+      );
+    }
+  } catch (error) {
+    showStatus(error.message || 'Не удалось загрузить данные GitHub.', 'error');
+  } finally {
+    els.form.querySelector('button').disabled = false;
+  }
+});
+
+els.generate.addEventListener('click', generateResume);
+document.querySelector('#copyBtn').addEventListener('click', copyResume);
+document.querySelector('#pdfBtn').addEventListener('click', downloadPdf);
+
+// Keep the current state available for debugging without exposing secrets.
+window.autoResumeState = state;
