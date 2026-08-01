@@ -46,6 +46,11 @@ jobs:
           path.write_text(value, encoding='utf-8')
           PY
           python .release/apply_v32.py
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('docs/THREAT_MODEL.md')
+          path.write_text(path.read_text(encoding='utf-8').rstrip() + '\n', encoding='utf-8')
+          PY
           npm run verify
       - name: Commit verified v3.2 release
         run: |
