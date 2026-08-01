@@ -9,6 +9,7 @@
 - собственная аналитика включает private/internal contributions;
 - authenticated self responses отделены от публичного кэша и используют `no-store`;
 - добавлены threat model, environment template и OAuth security tests;
+- полный набор из 53 автоматических проверок проходит без ошибок;
 - версия пакета обновлена до 3.0.0.
 
 ## v2.4.0 — 2026-08-01
