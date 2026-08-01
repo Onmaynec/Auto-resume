@@ -138,6 +138,11 @@ export function profileFixture(login = 'octocat', { authenticated = false } = {}
 export async function installApiMocks(page, { authState = guestAuthState } = {}) {
   let currentAuth = JSON.parse(JSON.stringify(authState));
 
+  await page.addInitScript(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+
   await page.route('**/api/auth/session**', async (route) => {
     if (route.request().method() === 'DELETE') {
       currentAuth = {
@@ -153,7 +158,7 @@ export async function installApiMocks(page, { authState = guestAuthState } = {})
     await route.fulfill({ status: 200, json: currentAuth });
   });
 
-  await page.route('**/api/github?**', async (route) => {
+  await page.route('**/api/github**', async (route) => {
     const requestUrl = new URL(route.request().url());
     const username = requestUrl.searchParams.get('username') || 'octocat';
     await route.fulfill({
