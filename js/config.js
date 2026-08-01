@@ -18,6 +18,7 @@ export const state = {
   source: '',
   rateLimit: null,
   sharedMode: false,
+  currentData: null,
 };
 
 export const $ = (selector) => document.querySelector(selector);
@@ -45,4 +46,12 @@ export const els = {
   resumeSection: $('#resumeSection'),
   resume: $('#resume'),
   sharedBanner: $('#sharedBanner'),
+  themeSelect: $('#themeSelect'),
+  recentSection: $('#recentProfilesSection'),
+  recentProfiles: $('#recentProfiles'),
+  clearRecent: $('#clearRecentBtn'),
+  compareForm: $('#compareForm'),
+  compareUsername: $('#compareUsername'),
+  compareButton: $('#compareBtn'),
+  compareResult: $('#compareResult'),
 };

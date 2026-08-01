@@ -1,0 +1,36 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  addRecentProfile, normalizeRecentProfiles, normalizeTheme, readPreferences, resolveTheme, writePreferences,
+} from '../js/preferences.mjs';
+
+test('theme values normalize and resolve', () => {
+  assert.equal(normalizeTheme('neon'), 'system');
+  assert.equal(resolveTheme('system', true), 'dark');
+  assert.equal(resolveTheme('system', false), 'light');
+  assert.equal(resolveTheme('dark', false), 'dark');
+});
+
+test('recent profiles are unique and newest first', () => {
+  let items = addRecentProfile([], { login: 'Octocat', name: 'Mona' }, 8, 10);
+  items = addRecentProfile(items, { login: 'torvalds', name: 'Linus' }, 8, 20);
+  items = addRecentProfile(items, { login: 'octocat', name: 'Mona Lisa' }, 8, 30);
+  assert.deepEqual(items.map((item) => item.login), ['octocat', 'torvalds']);
+  assert.equal(items[0].name, 'Mona Lisa');
+});
+
+test('preferences safely round-trip through storage', () => {
+  const map = new Map();
+  const storage = { getItem: (key) => map.get(key), setItem: (key, value) => map.set(key, value) };
+  writePreferences(storage, { theme: 'light', recentProfiles: [{ login: 'octocat', lastUsed: 2 }] });
+  assert.deepEqual(readPreferences(storage), {
+    theme: 'light',
+    recentProfiles: [{ login: 'octocat', name: 'octocat', avatarUrl: '', lastUsed: 2 }],
+  });
+});
+
+test('invalid recent profile data is ignored', () => {
+  assert.deepEqual(normalizeRecentProfiles([null, {}, { login: 'valid' }]), [
+    { login: 'valid', name: 'valid', avatarUrl: '', lastUsed: 0 },
+  ]);
+});

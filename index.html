@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Auto Resume v2.0 — анализ GitHub-профиля, вакансии и генерация публичного ATS-friendly резюме." />
-  <meta property="og:title" content="Auto Resume v2.0" />
-  <meta property="og:description" content="GitHub-профиль → адаптированное резюме с анализом вакансии и публичной ссылкой." />
-  <title>Auto Resume v2.0 — GitHub Resume Generator</title>
+  <meta name="description" content="Auto Resume v2.1 — анализ GitHub-профиля, сравнение разработчиков, вакансии и генерация ATS-friendly резюме." />
+  <meta property="og:title" content="Auto Resume v2.1" />
+  <meta property="og:description" content="GitHub-профиль → адаптированное резюме, сравнение профилей и публичная ссылка." />
+  <title>Auto Resume v2.1 — GitHub Resume Generator</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -14,30 +14,49 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="v21.css" />
 </head>
 <body>
+  <a class="skip-link" href="#mainContent">Перейти к содержимому</a>
   <div class="noise"></div>
   <div id="sharedBanner" class="shared-banner hidden">Публичное резюме · данные зашиты в ссылку и не хранятся на сервере</div>
   <header class="hero container">
-    <nav class="nav glass">
-      <a class="brand" href="./"><span class="brand-mark">AR</span><span>Auto Resume <small>v2.0</small></span></a>
-      <a class="nav-link" href="https://github.com/Onmaynec/Auto-resume" target="_blank" rel="noreferrer">GitHub ↗</a>
+    <nav class="nav glass" aria-label="Основная навигация">
+      <a class="brand" href="./"><span class="brand-mark">AR</span><span>Auto Resume <small>v2.1</small></span></a>
+      <div class="nav-actions">
+        <label class="theme-control" for="themeSelect">
+          <span>Тема</span>
+          <select id="themeSelect" aria-label="Цветовая тема">
+            <option value="system">Системная</option>
+            <option value="dark">Тёмная</option>
+            <option value="light">Светлая</option>
+          </select>
+        </label>
+        <a class="nav-link" href="https://github.com/Onmaynec/Auto-resume" target="_blank" rel="noreferrer">GitHub ↗</a>
+      </div>
     </nav>
     <div class="hero-copy">
       <div class="eyebrow">GitHub + вакансия → персональное резюме</div>
       <h1>Покажите рекрутеру именно те навыки, которые он ищет.</h1>
-      <p>Приложение анализирует профиль, историю языков и требования вакансии, выбирает релевантные проекты и создаёт редактируемое резюме.</p>
+      <p>Приложение анализирует профиль, историю языков и требования вакансии, сравнивает разработчиков и создаёт редактируемое резюме.</p>
       <form id="searchForm" class="search glass">
         <label class="sr-only" for="username">GitHub username</label>
-        <span class="search-icon">⌕</span>
-        <input id="username" autocomplete="off" placeholder="GitHub username, например torvalds" required />
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input id="username" autocomplete="username" placeholder="GitHub username, например torvalds" required />
         <button class="btn btn-primary" type="submit">Анализировать</button>
       </form>
-      <p class="microcopy">Используются публичные данные. Серверный GitHub-токен никогда не отправляется в браузер.</p>
+      <section id="recentProfilesSection" class="recent-profiles hidden" aria-labelledby="recentProfilesTitle">
+        <div class="recent-heading">
+          <span id="recentProfilesTitle">Недавние профили</span>
+          <button id="clearRecentBtn" class="text-button" type="button">Очистить</button>
+        </div>
+        <div id="recentProfiles" class="recent-list"></div>
+      </section>
+      <p class="microcopy">Используются публичные данные. История профилей хранится только в вашем браузере.</p>
     </div>
   </header>
 
-  <main class="container">
+  <main id="mainContent" class="container" tabindex="-1">
     <section id="status" class="status hidden" role="status" aria-live="polite"></section>
     <section id="dashboard" class="dashboard hidden">
       <div class="profile-grid">
@@ -47,6 +66,20 @@
           <div id="metrics" class="metrics"></div>
         </article>
       </div>
+
+      <section class="card compare-card" aria-labelledby="compareTitle">
+        <div class="section-heading">
+          <div><span class="kicker">Новая функция v2.1</span><h2 id="compareTitle">Сравнение GitHub-профилей</h2></div>
+          <span class="pill">публичные данные</span>
+        </div>
+        <p class="section-note">Введите второй username, чтобы сравнить активность, популярность проектов и пересечение технологий.</p>
+        <form id="compareForm" class="compare-form">
+          <label class="sr-only" for="compareUsername">Username второго профиля</label>
+          <input id="compareUsername" autocomplete="off" placeholder="Второй GitHub username" required />
+          <button id="compareBtn" class="btn btn-primary" type="submit">Сравнить</button>
+        </form>
+        <div id="compareResult" class="compare-result hidden" aria-live="polite"></div>
+      </section>
 
       <section id="tipsCard" class="card tips-card hidden">
         <div class="section-heading"><div><span class="kicker">Profile boost</span><h2>Подсказки по улучшению</h2></div></div>
@@ -73,8 +106,9 @@
       </section>
 
       <section class="card vacancy-card">
-        <div class="section-heading"><div><span class="kicker">Новая функция v2.0</span><h2>Анализ вакансии</h2></div><span class="pill">локальный анализ · без отправки текста ИИ</span></div>
+        <div class="section-heading"><div><span class="kicker">Подбор под вакансию</span><h2>Анализ вакансии</h2></div><span class="pill">локальный анализ · без отправки текста ИИ</span></div>
         <p class="section-note">Вставьте требования вакансии. Приложение найдёт технологии, сравнит их с профилем и поднимет самые релевантные проекты.</p>
+        <label class="sr-only" for="vacancyText">Описание вакансии</label>
         <textarea id="vacancyText" rows="8" placeholder="Вставьте описание вакансии: стек, обязанности, обязательные и желательные навыки…"></textarea>
         <div class="inline-actions">
           <button id="analyzeVacancyBtn" class="btn btn-primary" type="button">Сопоставить с профилем</button>
@@ -119,7 +153,7 @@
     </section>
   </main>
 
-  <footer class="container footer"><p>GitHub GraphQL API · Auto Resume v2.0 · данные публичных ссылок хранятся только в URL</p></footer>
+  <footer class="container footer"><p>GitHub GraphQL API · Auto Resume v2.1 · локальные настройки и история профилей</p></footer>
   <script type="module" src="app.js"></script>
 </body>
 </html>
