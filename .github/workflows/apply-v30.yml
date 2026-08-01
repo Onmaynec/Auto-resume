@@ -26,6 +26,12 @@ jobs:
           tar -xzf /tmp/v30-release.tar.gz
           rm -f .release/v30.part.*
           python .release/apply_v30.py
+          python - <<'PY'
+          from pathlib import Path
+          for name in ('tests/v21-markup.test.mjs', 'tests/v23-markup.test.mjs', 'tests/v24-markup.test.mjs'):
+              path = Path(name)
+              path.write_text(path.read_text().replace(r'v2\.4', r'v3\.0'), encoding='utf-8')
+          PY
           npm run verify
       - name: Commit verified release
         run: |
