@@ -62,7 +62,7 @@ test('comparison and public resume link preserve a read-only draft', async ({ pa
   const sharedHash = new URL(sharedUrl).hash;
   expect(sharedHash).toMatch(/^#resume=.+/);
 
-  await page.goto(`/${sharedHash}`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`/?e2e=shared${sharedHash}`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('body')).toHaveClass(/shared-view/);
   await expect(page.locator('#sharedBanner')).toBeVisible();
   await expect(page.locator('#resumeSection')).toBeVisible();
