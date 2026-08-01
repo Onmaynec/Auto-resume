@@ -3,6 +3,7 @@ const {
   clearFlowCookie,
   constantTimeEqual,
   getOAuthConfig,
+  randomBase64Url,
   readFlow,
   redirect,
   sendJson,
@@ -48,7 +49,7 @@ module.exports = async function handler(req, res) {
       headers: {
         Accept: 'application/vnd.github+json',
         Authorization: `Bearer ${tokenPayload.access_token}`,
-        'User-Agent': 'Onmaynec-Auto-Resume-v3',
+        'User-Agent': 'Onmaynec-Auto-Resume-v3.2',
         'X-GitHub-Api-Version': process.env.GITHUB_API_VERSION || '2022-11-28',
       },
     });
@@ -57,6 +58,7 @@ module.exports = async function handler(req, res) {
     const scopes = String(tokenPayload.scope || '').split(',').map((scope) => scope.trim()).filter(Boolean);
 
     writeSessionCookie(req, res, {
+      sid: randomBase64Url(18),
       token: tokenPayload.access_token,
       tokenType: tokenPayload.token_type || 'bearer',
       scopes,

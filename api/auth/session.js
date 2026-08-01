@@ -2,26 +2,32 @@ const {
   clearSessionCookie,
   getOAuthConfig,
   publicSession,
-  readSession,
   sameOriginRequest,
   sendJson,
 } = require('../_auth');
+const { denySession, readActiveSession } = require('../_session-state');
 
 module.exports = async function handler(req, res) {
   const config = getOAuthConfig();
   if (req.method === 'GET') {
     if (!config.configured) return sendJson(res, 200, publicSession(null, false));
-    return sendJson(res, 200, publicSession(readSession(req, config.sessionSecret), true));
+    const state = await readActiveSession(req, config.sessionSecret);
+    if (state.denied) clearSessionCookie(req, res);
+    return sendJson(res, 200, publicSession(state.session, true));
   }
 
   if (req.method === 'DELETE') {
     if (!sameOriginRequest(req)) return sendJson(res, 403, { code: 'CSRF_BLOCKED' });
-    const session = config.configured ? readSession(req, config.sessionSecret) : null;
+    const state = config.configured
+      ? await readActiveSession(req, config.sessionSecret)
+      : { session: null, denied: false };
+    const session = state.session;
     const mode = String(req.query?.revoke || 'none');
     let revoked = false;
     if (session?.token && ['token', 'grant'].includes(mode)) {
       revoked = await revokeGitHubAccess(session.token, mode, config).catch(() => false);
     }
+    await denySession(session).catch(() => ({ value: false, backend: 'error' }));
     clearSessionCookie(req, res);
     return sendJson(res, 200, { ok: true, revoked, mode });
   }
@@ -40,7 +46,7 @@ async function revokeGitHubAccess(token, mode, config) {
       Accept: 'application/vnd.github+json',
       Authorization: `Basic ${auth}`,
       'Content-Type': 'application/json',
-      'User-Agent': 'Onmaynec-Auto-Resume-v3',
+      'User-Agent': 'Onmaynec-Auto-Resume-v3.2',
       'X-GitHub-Api-Version': process.env.GITHUB_API_VERSION || '2022-11-28',
     },
     body: JSON.stringify({ access_token: token }),

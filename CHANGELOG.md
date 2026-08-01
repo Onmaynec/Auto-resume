@@ -1,5 +1,19 @@
 # Changelog
 
+## v3.2.0 — 2026-08-01
+
+- добавлен общий Upstash Redis / Vercel KV REST-адаптер без обязательной npm-зависимости;
+- публичный и authenticated-self кэш разделены независимыми namespace;
+- добавлен распределённый fixed-window rate limiting по HMAC-отпечатку IP или OAuth-сессии;
+- реализованы stale-while-revalidate, локальная дедупликация и distributed lock против cache stampede;
+- при сбое Redis приложение автоматически использует безопасный memory fallback;
+- добавлен опциональный session denylist с TTL без хранения OAuth-токена;
+- добавлены privacy-safe заголовки и метрики HIT/MISS/STALE, backend latency и degraded mode;
+- обновлены environment template, threat model и deployment documentation;
+- добавлены unit и integration тесты Redis REST, TTL, partitioning, rate limits, fallback и denylist;
+- полный набор из 77 автоматических проверок проходит без ошибок;
+- версия проекта повышена до 3.2.0.
+
 ## v3.1.0 — 2026-08-01
 
 - добавлена фоновая проверка последнего стабильного GitHub Release;

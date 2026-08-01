@@ -1,14 +1,15 @@
-const { readSession } = require('./_auth');
+const { readActiveSession } = require('./_session-state');
+const { getGlobalStore } = require('./_store');
+const {
+  applyInfrastructureHeaders,
+  consumeRateLimit,
+  loadProfile,
+  logInfrastructureMetric,
+  makeCacheKey,
+} = require('./_profile-gateway');
 
-const CACHE_TTL_MS = 15 * 60 * 1000;
-const REQUEST_WINDOW_MS = 10 * 60 * 1000;
-const REQUEST_LIMIT = 20;
 const USERNAME_RE = /^[a-z\d](?:[a-z\d-]{0,37}[a-z\d])?$/i;
-
-const responseCache = globalThis.__autoResumeV3Cache || new Map();
-const requestWindows = globalThis.__autoResumeV3RequestWindows || new Map();
-globalThis.__autoResumeV3Cache = responseCache;
-globalThis.__autoResumeV3RequestWindows = requestWindows;
+const store = getGlobalStore();
 
 module.exports = async function handler(req, res) {
   setSecurityHeaders(res);
@@ -20,13 +21,13 @@ module.exports = async function handler(req, res) {
   const username = String(req.query.username || '').replace(/^@/, '').trim();
   if (!USERNAME_RE.test(username)) return sendJson(res, 400, { code: 'INVALID_USERNAME', error: 'Некорректный GitHub username.' });
 
-  const session = readSession(req);
+  const sessionState = await readActiveSession(req, process.env.SESSION_SECRET);
+  const session = sessionState.session;
   const auth = resolveAuthContext(username, session, process.env.GITHUB_TOKEN || process.env.GH_TOKEN);
   if (!auth.token) return sendJson(res, 503, { code: 'PROXY_NOT_CONFIGURED', error: 'На сервере не задан GITHUB_TOKEN и отсутствует OAuth-сессия.' });
 
-  const rateState = consumeRequest(getClientId(req, session));
-  res.setHeader('X-Auto-Resume-Limit', String(REQUEST_LIMIT));
-  res.setHeader('X-Auto-Resume-Remaining', String(rateState.remaining));
+  const rateState = await consumeRateLimit({ store, req, session });
+  applyInfrastructureHeaders(res, null, rateState);
   if (!rateState.allowed) {
     return sendJson(res, 429, {
       code: 'TOO_MANY_REQUESTS',
@@ -35,23 +36,28 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  const cacheKey = auth.privateContributionsIncluded
-    ? `oauth-self:${session.user.id}:${username.toLowerCase()}`
-    : `public:${username.toLowerCase()}`;
-  const cached = responseCache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) {
-    res.setHeader('X-Auto-Resume-Cache', 'HIT');
-    setResponseCachePolicy(res, auth.privateContributionsIncluded);
-    return sendJson(res, 200, cached.data);
-  }
+  const cacheKey = makeCacheKey({
+    username,
+    privateContributionsIncluded: auth.privateContributionsIncluded,
+    session,
+  });
 
   try {
-    const data = await fetchGitHubProfile(username, auth.token, auth);
-    responseCache.set(cacheKey, { data, expiresAt: Date.now() + CACHE_TTL_MS });
-    pruneMaps();
-    res.setHeader('X-Auto-Resume-Cache', 'MISS');
+    const result = await loadProfile({
+      store,
+      cacheKey,
+      fetcher: () => fetchGitHubProfile(username, auth.token, auth),
+      waitUntil: typeof req.waitUntil === 'function' ? req.waitUntil.bind(req) : null,
+    });
+    applyInfrastructureHeaders(res, result, rateState);
     setResponseCachePolicy(res, auth.privateContributionsIncluded);
-    return sendJson(res, 200, data);
+    logInfrastructureMetric({
+      cache: result.cache,
+      store: result.store,
+      upstreamDurationMs: result.upstreamDurationMs,
+      status: 200,
+    });
+    return sendJson(res, 200, result.data);
   } catch (error) {
     if (error.code === 'USER_NOT_FOUND') return sendJson(res, 404, { code: error.code, error: 'Пользователь не найден. Проверьте username.' });
     if (error.code === 'GITHUB_RATE_LIMIT') return sendJson(res, 429, { code: error.code, error: 'Лимит GitHub API исчерпан.', resetAt: error.resetAt || null });
@@ -104,7 +110,7 @@ async function fetchGitHubProfile(username, token, auth) {
         Accept: 'application/vnd.github+json',
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
-        'User-Agent': 'Onmaynec-Auto-Resume-v3',
+        'User-Agent': 'Onmaynec-Auto-Resume-v3.2',
         'X-GitHub-Api-Version': process.env.GITHUB_API_VERSION || '2022-11-28',
       },
       body: JSON.stringify({ query, variables }),
@@ -269,33 +275,6 @@ function normalizeLanguageMonth(month, collection) {
     total += count;
   }
   return { key: month.key, label: month.label, total, languages };
-}
-
-function consumeRequest(clientId) {
-  const now = Date.now();
-  const current = requestWindows.get(clientId);
-  if (!current || current.resetAt <= now) {
-    const next = { count: 1, resetAt: now + REQUEST_WINDOW_MS };
-    requestWindows.set(clientId, next);
-    return { allowed: true, remaining: REQUEST_LIMIT - 1, resetAt: next.resetAt };
-  }
-  current.count += 1;
-  requestWindows.set(clientId, current);
-  return { allowed: current.count <= REQUEST_LIMIT, remaining: Math.max(0, REQUEST_LIMIT - current.count), resetAt: current.resetAt };
-}
-
-function getClientId(req, session) {
-  if (session?.user?.id) return `oauth:${session.user.id}`;
-  const forwarded = req.headers['x-forwarded-for'];
-  if (Array.isArray(forwarded)) return forwarded[0];
-  if (typeof forwarded === 'string') return forwarded.split(',')[0].trim();
-  return req.socket?.remoteAddress || 'unknown';
-}
-
-function pruneMaps() {
-  const now = Date.now();
-  if (responseCache.size > 250) for (const [key, value] of responseCache) if (value.expiresAt <= now) responseCache.delete(key);
-  if (requestWindows.size > 500) for (const [key, value] of requestWindows) if (value.resetAt <= now) requestWindows.delete(key);
 }
 
 function setResponseCachePolicy(res, privateResponse) {

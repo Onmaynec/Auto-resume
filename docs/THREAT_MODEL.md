@@ -37,3 +37,12 @@
 ## Secret rotation
 
 Rotate `SESSION_SECRET` to invalidate all local sessions. Rotate `GITHUB_OAUTH_CLIENT_SECRET` in GitHub and deployment settings after suspected exposure. Never commit either value.
+
+## Redis/KV и распределённая инфраструктура v3.2
+
+- OAuth token, cookie, текст вакансии и содержимое резюме никогда не записываются в Redis.
+- Ключи rate limiting используют HMAC/хэш IP или session id, а не исходные идентификаторы.
+- Authenticated-self данные имеют отдельный cache namespace и не читаются публичным запросом.
+- Session denylist опционален и хранит только хэш `sid`, `revokedAt` и TTL до истечения cookie.
+- При недоступном Redis запросы переходят на локальный memory fallback; ошибка storage не раскрывается клиенту.
+- Метрики содержат только тип cache result, backend, latency, degraded flag и HTTP status.
