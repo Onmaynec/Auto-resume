@@ -57,10 +57,13 @@ test('comparison and public resume link preserve a read-only draft', async ({ pa
   await page.locator('[data-template-button="ats"]').click();
   await page.locator('#shareBtn').click();
 
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain('#resume=');
   const sharedUrl = await page.evaluate(() => navigator.clipboard.readText());
-  expect(sharedUrl).toContain('#resume=');
+  const sharedHash = new URL(sharedUrl).hash;
+  expect(sharedHash).toMatch(/^#resume=.+/);
 
-  await page.goto(sharedUrl);
+  await page.goto(`/${sharedHash}`, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('body')).toHaveClass(/shared-view/);
   await expect(page.locator('#sharedBanner')).toBeVisible();
   await expect(page.locator('#resumeSection')).toBeVisible();
   await expect(page.locator('#resume')).toHaveAttribute('data-template', 'ats');
