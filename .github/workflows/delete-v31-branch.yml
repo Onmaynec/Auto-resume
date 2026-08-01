@@ -1,0 +1,21 @@
+name: Delete v3.1 work branch
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.head_ref == 'agent/v3.1-releases-auto-update'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/v3.1-releases-auto-update
+          fetch-depth: 0
+      - name: Delete completed branch
+        run: git push origin --delete agent/v3.1-releases-auto-update
