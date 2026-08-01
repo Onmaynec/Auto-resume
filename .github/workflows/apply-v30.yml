@@ -35,3 +35,5 @@ jobs:
           git add -A
           git commit -m "Release Auto Resume v3.0"
           git push origin HEAD:agent/v3.0-oauth-private-analytics
+
+# Separate trigger commit ensures GitHub registers this new workflow.
