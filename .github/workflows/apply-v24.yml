@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - '.release/v24-patch.tar.gz'
+      - '.release/v24.part.*'
       - '.github/workflows/apply-v24.yml'
 
 permissions:
@@ -24,8 +24,9 @@ jobs:
           node-version: 24
       - name: Apply release patch and verify
         run: |
-          tar -xzf .release/v24-patch.tar.gz
-          rm -f .release/v24-patch.tar.gz .github/workflows/apply-v24.yml
+          cat .release/v24.part.* | base64 --decode > /tmp/v24-patch.tar.gz
+          tar -xzf /tmp/v24-patch.tar.gz
+          rm -f .release/v24.part.* .release/v24-patch.tar.gz .github/workflows/apply-v24.yml
           rmdir .release 2>/dev/null || true
           npm run verify
       - name: Commit verified release
