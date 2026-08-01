@@ -16,5 +16,5 @@ test('export module is connected to the UI and offline shell', () => {
   assert.match(resumeModule, /buildResumeDocx/);
   assert.match(resumeModule, /buildResumeMarkdown/);
   assert.match(worker, /js\/docx-export\.mjs/);
-  assert.match(worker, /v3\.0-shell/);
+  assert.match(worker, /v\$\{APP_VERSION\}-shell/);
 });
