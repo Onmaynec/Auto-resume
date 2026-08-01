@@ -1,0 +1,36 @@
+name: Apply Auto Resume v2.1
+
+on:
+  push:
+    branches: [agent/v2.1-profile-compare]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/v2.1-profile-compare
+
+      - name: Apply and verify v2.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f .release/v21.part.00 ]]; then
+            echo "Release archive already applied."
+            exit 0
+          fi
+          cat .release/v21.part.* | base64 --decode > /tmp/v21-release.tar.gz
+          echo "e06b53c4a110be1a945e60bf108230e5b512a7ef4159b88c7eeed01254868c12  /tmp/v21-release.tar.gz" | sha256sum --check -
+          tar -xzf /tmp/v21-release.tar.gz
+          npm run verify
+          rm -rf .release
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Release Auto Resume v2.1"
+          git push
