@@ -50,7 +50,10 @@ test('encrypted session cookies round-trip and reject tampering', () => {
   const sealed = auth.seal({ kind: 'session', exp: Date.now() + 60_000, token: 'secret-token' }, SECRET);
   const opened = auth.unseal(sealed, SECRET, 'session');
   assert.equal(opened.token, 'secret-token');
-  const tampered = `${sealed.slice(0, -1)}${sealed.endsWith('a') ? 'b' : 'a'}`;
+  const parts = sealed.split('.');
+  const encrypted = Buffer.from(parts[2], 'base64url');
+  encrypted[Math.floor(encrypted.length / 2)] ^= 0x01;
+  const tampered = `${parts[0]}.${parts[1]}.${encrypted.toString('base64url')}`;
   assert.equal(auth.unseal(tampered, SECRET, 'session'), null);
 });
 
