@@ -1,0 +1,35 @@
+name: Delete v2.1 work branch
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened]
+
+permissions:
+  contents: write
+
+jobs:
+  delete:
+    if: github.head_ref == 'agent/v2.1-profile-compare'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete work branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          API_URL: ${{ github.api_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --output /tmp/delete-response --write-out '%{http_code}' \
+            -X DELETE \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "$API_URL/repos/$REPOSITORY/git/refs/heads/agent/v2.1-profile-compare")
+          if [[ "$status" == "204" || "$status" == "404" || "$status" == "422" ]]; then
+            echo "Branch cleanup completed with HTTP $status."
+            exit 0
+          fi
+          cat /tmp/delete-response
+          exit 1
