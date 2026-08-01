@@ -1,0 +1,23 @@
+name: Delete v3.0 work branch
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.head_ref == 'agent/v3.0-oauth-private-analytics'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete completed branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          curl --fail-with-body -X DELETE \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/git/refs/heads/agent/v3.0-oauth-private-analytics"
