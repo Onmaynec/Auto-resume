@@ -1,0 +1,26 @@
+name: Delete v2.4 work branch
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches: [main]
+    paths:
+      - '.github/workflows/delete-v24-branch.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  delete:
+    if: github.head_ref == 'agent/v2.4-docx-markdown'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete completed branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl --fail-with-body -L -X DELETE \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/git/refs/heads/agent/v2.4-docx-markdown"
