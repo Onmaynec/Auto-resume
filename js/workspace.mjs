@@ -1,0 +1,145 @@
+export const WORKSPACE_VERSION = 1;
+export const WORKSPACE_KEY = 'auto-resume:workspace:v1';
+export const PROFILE_CACHE_PREFIX = 'auto-resume:v2:';
+const MAX_DRAFTS = 30;
+
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+export function normalizeWorkspace(value) {
+  const source = value && typeof value === 'object' ? value : {};
+  const drafts = Array.isArray(source.drafts)
+    ? source.drafts.map(normalizeDraft).filter(Boolean).slice(0, MAX_DRAFTS)
+    : [];
+  return {
+    version: WORKSPACE_VERSION,
+    drafts,
+    updatedAt: typeof source.updatedAt === 'string' ? source.updatedAt : null,
+  };
+}
+
+export function normalizeDraft(value) {
+  if (!value || typeof value !== 'object' || !value.draft || typeof value.draft !== 'object') return null;
+  const id = String(value.id || '').trim();
+  if (!id) return null;
+  const savedAt = isValidDate(value.savedAt) ? value.savedAt : new Date(0).toISOString();
+  return {
+    id,
+    name: String(value.name || 'Без названия').trim().slice(0, 120) || 'Без названия',
+    savedAt,
+    template: value.template === 'ats' ? 'ats' : 'visual',
+    user: value.user && typeof value.user === 'object' ? clone(value.user) : {},
+    draft: clone(value.draft),
+  };
+}
+
+export function createDraftRecord({ id, name, user, draft, template = 'visual', savedAt = new Date().toISOString() }) {
+  if (!draft || typeof draft !== 'object') throw new TypeError('Draft data is required.');
+  const login = String(user?.login || user?.name || 'resume').toLowerCase().replace(/[^a-z0-9-]+/g, '-');
+  const generatedId = `${login || 'resume'}-${Date.parse(savedAt) || Date.now()}`;
+  return normalizeDraft({
+    id: id || generatedId,
+    name: name || `Резюме @${user?.login || user?.name || 'developer'}`,
+    user,
+    draft,
+    template,
+    savedAt,
+  });
+}
+
+export function upsertDraft(drafts, record) {
+  const normalized = normalizeDraft(record);
+  if (!normalized) throw new TypeError('Invalid draft record.');
+  const list = Array.isArray(drafts) ? drafts.map(normalizeDraft).filter(Boolean) : [];
+  return [normalized, ...list.filter((item) => item.id !== normalized.id)]
+    .sort((left, right) => Date.parse(right.savedAt) - Date.parse(left.savedAt))
+    .slice(0, MAX_DRAFTS);
+}
+
+export function renameDraft(drafts, id, name, savedAt = new Date().toISOString()) {
+  const nextName = String(name || '').trim().slice(0, 120);
+  if (!nextName) return Array.isArray(drafts) ? drafts : [];
+  return (Array.isArray(drafts) ? drafts : []).map((item) => {
+    const normalized = normalizeDraft(item);
+    return normalized?.id === id ? { ...normalized, name: nextName, savedAt } : normalized;
+  }).filter(Boolean);
+}
+
+export function removeDraft(drafts, id) {
+  return (Array.isArray(drafts) ? drafts : []).map(normalizeDraft).filter((item) => item && item.id !== id);
+}
+
+export function readWorkspace(storage) {
+  try {
+    const raw = storage?.getItem?.(WORKSPACE_KEY);
+    return raw ? normalizeWorkspace(JSON.parse(raw)) : normalizeWorkspace(null);
+  } catch {
+    return normalizeWorkspace(null);
+  }
+}
+
+export function writeWorkspace(storage, workspace) {
+  const normalized = normalizeWorkspace({ ...workspace, updatedAt: new Date().toISOString() });
+  storage?.setItem?.(WORKSPACE_KEY, JSON.stringify(normalized));
+  return normalized;
+}
+
+export function createBackup({ workspace, preferences }) {
+  return JSON.stringify({
+    type: 'auto-resume-backup',
+    version: WORKSPACE_VERSION,
+    exportedAt: new Date().toISOString(),
+    workspace: normalizeWorkspace(workspace),
+    preferences: normalizePreferences(preferences),
+  }, null, 2);
+}
+
+export function parseBackup(text) {
+  let payload;
+  try {
+    payload = JSON.parse(String(text || '').replace(/^\uFEFF/, ''));
+  } catch {
+    throw new Error('Файл не является корректным JSON.');
+  }
+  if (payload?.type !== 'auto-resume-backup') throw new Error('Это не резервная копия Auto Resume.');
+  if (Number(payload.version) > WORKSPACE_VERSION) throw new Error('Резервная копия создана более новой версией приложения.');
+  return {
+    workspace: normalizeWorkspace(payload.workspace),
+    preferences: normalizePreferences(payload.preferences),
+  };
+}
+
+export function normalizePreferences(value) {
+  const source = value && typeof value === 'object' ? value : {};
+  const theme = ['system', 'dark', 'light'].includes(source.theme) ? source.theme : 'system';
+  const recentProfiles = Array.isArray(source.recentProfiles)
+    ? source.recentProfiles.filter((item) => item && typeof item.login === 'string').slice(0, 8).map((item) => ({
+      login: item.login,
+      name: item.name || item.login,
+      avatarUrl: item.avatarUrl || '',
+      openedAt: item.openedAt || null,
+    }))
+    : [];
+  return { theme, recentProfiles };
+}
+
+export function profileCacheKeys(storage, prefix = PROFILE_CACHE_PREFIX) {
+  const keys = [];
+  const length = Number(storage?.length || 0);
+  for (let index = 0; index < length; index += 1) {
+    const key = storage.key(index);
+    if (typeof key === 'string' && key.startsWith(prefix)) keys.push(key);
+  }
+  return keys;
+}
+
+export function clearProfileCache(storage) {
+  const keys = profileCacheKeys(storage);
+  keys.forEach((key) => storage.removeItem(key));
+  return keys.length;
+}
+
+function isValidDate(value) {
+  return typeof value === 'string' && Number.isFinite(Date.parse(value));
+}

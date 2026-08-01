@@ -3,10 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Auto Resume v2.1 — анализ GitHub-профиля, сравнение разработчиков, вакансии и генерация ATS-friendly резюме." />
-  <meta property="og:title" content="Auto Resume v2.1" />
-  <meta property="og:description" content="GitHub-профиль → адаптированное резюме, сравнение профилей и публичная ссылка." />
-  <title>Auto Resume v2.1 — GitHub Resume Generator</title>
+  <meta name="description" content="Auto Resume v2.2 — PWA-генератор резюме по GitHub с локальными черновиками, сравнением профилей и ATS-экспортом." />
+  <meta name="theme-color" content="#070b12" />
+  <meta property="og:title" content="Auto Resume v2.2" />
+  <meta property="og:description" content="GitHub-профиль → адаптированное резюме, локальные черновики, сравнение профилей и публичная ссылка." />
+  <title>Auto Resume v2.2 — GitHub Resume Generator</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -15,6 +18,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="v21.css" />
+  <link rel="stylesheet" href="v22.css" />
 </head>
 <body>
   <a class="skip-link" href="#mainContent">Перейти к содержимому</a>
@@ -22,8 +26,10 @@
   <div id="sharedBanner" class="shared-banner hidden">Публичное резюме · данные зашиты в ссылку и не хранятся на сервере</div>
   <header class="hero container">
     <nav class="nav glass" aria-label="Основная навигация">
-      <a class="brand" href="./"><span class="brand-mark">AR</span><span>Auto Resume <small>v2.1</small></span></a>
+      <a class="brand" href="./"><span class="brand-mark">AR</span><span>Auto Resume <small>v2.2</small></span></a>
       <div class="nav-actions">
+        <span id="networkStatus" class="network-status" role="status" aria-live="polite">Онлайн</span>
+        <button id="installBtn" class="btn btn-secondary btn-compact hidden" type="button">Установить</button>
         <label class="theme-control" for="themeSelect">
           <span>Тема</span>
           <select id="themeSelect" aria-label="Цветовая тема">
@@ -38,7 +44,7 @@
     <div class="hero-copy">
       <div class="eyebrow">GitHub + вакансия → персональное резюме</div>
       <h1>Покажите рекрутеру именно те навыки, которые он ищет.</h1>
-      <p>Приложение анализирует профиль, историю языков и требования вакансии, сравнивает разработчиков и создаёт редактируемое резюме.</p>
+      <p>Приложение анализирует профиль, историю языков и требования вакансии, сравнивает разработчиков и сохраняет редактируемые резюме локально.</p>
       <form id="searchForm" class="search glass">
         <label class="sr-only" for="username">GitHub username</label>
         <span class="search-icon" aria-hidden="true">⌕</span>
@@ -52,7 +58,28 @@
         </div>
         <div id="recentProfiles" class="recent-list"></div>
       </section>
-      <p class="microcopy">Используются публичные данные. История профилей хранится только в вашем браузере.</p>
+
+      <section id="workspacePanel" class="workspace-panel glass" aria-labelledby="workspaceTitle">
+        <div class="workspace-heading">
+          <div><span class="kicker">Локальное рабочее пространство</span><h2 id="workspaceTitle">Черновики и резервные копии</h2></div>
+          <span id="dataFreshness" class="freshness-pill">GitHub-данные ещё не загружены</span>
+        </div>
+        <p class="workspace-note">Черновики, тема и история профилей хранятся только в этом браузере. Резервная копия позволяет перенести их на другое устройство.</p>
+        <div class="workspace-controls">
+          <label class="draft-name-field" for="draftName">
+            <span>Название черновика</span>
+            <input id="draftName" maxlength="120" placeholder="Например: Frontend Developer — Acme" />
+          </label>
+          <button id="saveDraftBtn" class="btn btn-primary" type="button">Сохранить черновик</button>
+          <button id="exportBackupBtn" class="btn btn-secondary" type="button">Экспорт JSON</button>
+          <label class="btn btn-secondary file-button" for="importBackupInput">Импорт JSON</label>
+          <input id="importBackupInput" class="sr-only" type="file" accept="application/json,.json" />
+          <button id="clearProfileCacheBtn" class="btn btn-secondary" type="button">Очистить API-кэш</button>
+        </div>
+        <div id="draftList" class="draft-list" aria-live="polite"></div>
+      </section>
+
+      <p class="microcopy">Используются публичные данные. История, черновики и настройки остаются в вашем браузере.</p>
     </div>
   </header>
 
@@ -69,7 +96,7 @@
 
       <section class="card compare-card" aria-labelledby="compareTitle">
         <div class="section-heading">
-          <div><span class="kicker">Новая функция v2.1</span><h2 id="compareTitle">Сравнение GitHub-профилей</h2></div>
+          <div><span class="kicker">Сравнение</span><h2 id="compareTitle">Сравнение GitHub-профилей</h2></div>
           <span class="pill">публичные данные</span>
         </div>
         <p class="section-note">Введите второй username, чтобы сравнить активность, популярность проектов и пересечение технологий.</p>
@@ -137,7 +164,7 @@
         <article id="resume" class="resume-paper resume-visual" aria-label="Редактируемое резюме"></article>
         <aside class="resume-actions card">
           <span class="kicker">Редактор</span><h2>Ваше резюме</h2>
-          <p>Нажмите на любой текст в макете, чтобы изменить его.</p>
+          <p>Нажмите на любой текст в макете, чтобы изменить его. Изменения активного черновика сохраняются автоматически.</p>
           <div class="template-switch" role="group" aria-label="Шаблон резюме">
             <button type="button" class="active" data-template-button="visual">Visual</button>
             <button type="button" data-template-button="ats">ATS</button>
@@ -153,7 +180,7 @@
     </section>
   </main>
 
-  <footer class="container footer"><p>GitHub GraphQL API · Auto Resume v2.1 · локальные настройки и история профилей</p></footer>
+  <footer class="container footer"><p>GitHub GraphQL API · Auto Resume v2.2 · PWA, локальные черновики и резервные копии</p></footer>
   <script type="module" src="app.js"></script>
 </body>
 </html>

@@ -4,7 +4,7 @@ import { bindProjectBuilder, renderProjectBuilder } from './js/projects.js';
 import { renderAll, renderVacancyResult } from './js/render.js';
 import {
   copyResume, copyShareLink, downloadText, downloadVisualPdf, generateResume,
-  printAtsPdf, renderSharedResume, setTemplate,
+  printAtsPdf, renderResume, renderSharedResume, setTemplate,
 } from './js/resume.js';
 import { compareProfiles } from './js/compare.mjs';
 import {
@@ -12,14 +12,25 @@ import {
 } from './js/preferences.mjs';
 import { decodeSharePayload } from './js/share.mjs';
 import { analyzeVacancy } from './js/vacancy.mjs';
-import { escapeHtml, showStatus } from './js/utils.js';
+import {
+  clearProfileCache as clearCachedProfiles, createBackup, createDraftRecord, parseBackup,
+  readWorkspace, removeDraft, renameDraft, upsertDraft, writeWorkspace,
+} from './js/workspace.mjs';
+import { downloadBlob, escapeHtml, showStatus } from './js/utils.js';
 
 let preferences = readPreferences(window.localStorage);
+let workspace = readWorkspace(window.localStorage);
+let currentDraftId = null;
+let autosaveTimer = null;
+let deferredInstallPrompt = null;
 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
 
 bindProjectBuilder();
 applyTheme(preferences.theme);
 renderRecentProfiles();
+renderDrafts();
+updateNetworkStatus();
+registerPwa();
 
 els.form.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -100,15 +111,34 @@ document.querySelector('#clearVacancyBtn').addEventListener('click', () => {
   renderVacancyResult();
 });
 
-els.generate.addEventListener('click', generateResume);
+els.generate.addEventListener('click', () => {
+  generateResume();
+  currentDraftId = null;
+  els.draftName.value = defaultDraftName();
+  saveCurrentDraft({ silent: true });
+});
+
 document.querySelector('#copyBtn').addEventListener('click', copyResume);
 document.querySelector('#txtBtn').addEventListener('click', downloadText);
 document.querySelector('#visualPdfBtn').addEventListener('click', downloadVisualPdf);
 document.querySelector('#atsPdfBtn').addEventListener('click', printAtsPdf);
 document.querySelector('#shareBtn').addEventListener('click', copyShareLink);
 document.querySelectorAll('[data-template-button]').forEach((button) => {
-  button.addEventListener('click', () => setTemplate(button.dataset.templateButton));
+  button.addEventListener('click', () => {
+    setTemplate(button.dataset.templateButton);
+    scheduleAutosave();
+  });
 });
+
+els.resume.addEventListener('input', scheduleAutosave);
+els.saveDraft.addEventListener('click', () => saveCurrentDraft());
+els.draftList.addEventListener('click', handleDraftAction);
+els.exportBackup.addEventListener('click', exportLocalBackup);
+els.importBackup.addEventListener('change', importLocalBackup);
+els.clearProfileCache.addEventListener('click', clearProfileCaches);
+els.installButton.addEventListener('click', installPwa);
+window.addEventListener('online', updateNetworkStatus);
+window.addEventListener('offline', updateNetworkStatus);
 
 async function loadPrimaryProfile(username) {
   if (!isValidUsername(username)) {
@@ -116,6 +146,7 @@ async function loadPrimaryProfile(username) {
     return;
   }
 
+  document.body.classList.remove('draft-view');
   showStatus('Анализируем профиль, проекты, активность и историю языков…');
   els.dashboard.classList.add('hidden');
   els.resumeSection.classList.add('hidden');
@@ -131,6 +162,7 @@ async function loadPrimaryProfile(username) {
     preferences.recentProfiles = addRecentProfile(preferences.recentProfiles, data.user);
     persistPreferences();
     renderRecentProfiles();
+    renderDataFreshness(data, cached);
 
     if (data.source === 'github-graphql') {
       const remaining = data.rateLimit?.remaining;
@@ -151,6 +183,7 @@ function applyTheme(theme) {
   const resolved = resolveTheme(normalized, systemTheme.matches);
   document.documentElement.dataset.theme = resolved;
   document.documentElement.style.colorScheme = resolved;
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', resolved === 'light' ? '#f5f7fb' : '#070b12');
   els.themeSelect.value = normalized;
 }
 
@@ -194,6 +227,177 @@ function renderComparison(comparison) {
     <div class="compare-common"><strong>Общие технологии</strong><div class="chips positive">${common}</div></div>
   `;
   els.compareResult.classList.remove('hidden');
+}
+
+function saveCurrentDraft({ silent = false } = {}) {
+  if (!state.resumeDraft) {
+    if (!silent) showStatus('Сначала сгенерируйте или откройте резюме.', 'warning');
+    return null;
+  }
+  const record = createDraftRecord({
+    id: currentDraftId,
+    name: els.draftName.value.trim() || defaultDraftName(),
+    user: state.user || {},
+    draft: state.resumeDraft,
+    template: state.resumeTemplate,
+  });
+  workspace.drafts = upsertDraft(workspace.drafts, record);
+  workspace = writeWorkspace(window.localStorage, workspace);
+  currentDraftId = record.id;
+  els.draftName.value = record.name;
+  renderDrafts();
+  if (!silent) showStatus(`Черновик «${record.name}» сохранён локально.`, 'success');
+  return record;
+}
+
+function scheduleAutosave() {
+  if (!state.resumeDraft || state.sharedMode) return;
+  window.clearTimeout(autosaveTimer);
+  autosaveTimer = window.setTimeout(() => saveCurrentDraft({ silent: true }), 450);
+}
+
+function renderDrafts() {
+  if (!workspace.drafts.length) {
+    els.draftList.innerHTML = '<p class="draft-empty">Сохранённых черновиков пока нет.</p>';
+    return;
+  }
+  els.draftList.innerHTML = workspace.drafts.map((record) => `
+    <article class="draft-item ${record.id === currentDraftId ? 'active' : ''}">
+      <div class="draft-copy">
+        <strong>${escapeHtml(record.name)}</strong>
+        <span>@${escapeHtml(record.user?.login || 'developer')} · ${formatSavedAt(record.savedAt)} · ${record.template.toUpperCase()}</span>
+      </div>
+      <div class="draft-actions">
+        <button class="text-button" type="button" data-draft-action="load" data-draft-id="${escapeHtml(record.id)}">Открыть</button>
+        <button class="text-button" type="button" data-draft-action="rename" data-draft-id="${escapeHtml(record.id)}">Переименовать</button>
+        <button class="text-button danger-text" type="button" data-draft-action="delete" data-draft-id="${escapeHtml(record.id)}">Удалить</button>
+      </div>
+    </article>
+  `).join('');
+}
+
+function handleDraftAction(event) {
+  const button = event.target.closest('[data-draft-action]');
+  if (!button) return;
+  const record = workspace.drafts.find((item) => item.id === button.dataset.draftId);
+  if (!record) return;
+
+  if (button.dataset.draftAction === 'load') {
+    loadDraft(record);
+    return;
+  }
+  if (button.dataset.draftAction === 'rename') {
+    const nextName = window.prompt('Новое название черновика', record.name);
+    if (!nextName?.trim()) return;
+    workspace.drafts = renameDraft(workspace.drafts, record.id, nextName);
+    workspace = writeWorkspace(window.localStorage, workspace);
+    if (currentDraftId === record.id) els.draftName.value = nextName.trim();
+    renderDrafts();
+    return;
+  }
+  if (button.dataset.draftAction === 'delete' && window.confirm(`Удалить черновик «${record.name}»?`)) {
+    workspace.drafts = removeDraft(workspace.drafts, record.id);
+    workspace = writeWorkspace(window.localStorage, workspace);
+    if (currentDraftId === record.id) currentDraftId = null;
+    renderDrafts();
+  }
+}
+
+function loadDraft(record) {
+  currentDraftId = record.id;
+  state.user = JSON.parse(JSON.stringify(record.user || {}));
+  state.resumeDraft = JSON.parse(JSON.stringify(record.draft));
+  state.resumeTemplate = record.template;
+  state.sharedMode = false;
+  els.draftName.value = record.name;
+  document.body.classList.add('draft-view');
+  els.dashboard.classList.remove('hidden');
+  els.resumeSection.classList.remove('hidden');
+  renderResume({ editable: true });
+  renderDrafts();
+  setTimeout(() => els.resumeSection.scrollIntoView({ behavior: 'smooth' }), 50);
+  showStatus(`Открыт локальный черновик «${record.name}».`, 'success');
+}
+
+function exportLocalBackup() {
+  const content = createBackup({ workspace, preferences });
+  const date = new Date().toISOString().slice(0, 10);
+  downloadBlob(`\uFEFF${content}`, `auto-resume-backup-${date}.json`, 'application/json;charset=utf-8');
+  showStatus('Резервная копия сохранена.', 'success');
+}
+
+async function importLocalBackup(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    const imported = parseBackup(await file.text());
+    workspace = writeWorkspace(window.localStorage, imported.workspace);
+    preferences = writePreferences(window.localStorage, imported.preferences);
+    currentDraftId = null;
+    applyTheme(preferences.theme);
+    renderRecentProfiles();
+    renderDrafts();
+    showStatus(`Импортировано черновиков: ${workspace.drafts.length}.`, 'success');
+  } catch (error) {
+    showStatus(error.message || 'Не удалось импортировать резервную копию.', 'error');
+  } finally {
+    event.target.value = '';
+  }
+}
+
+async function clearProfileCaches() {
+  const removed = clearCachedProfiles(window.localStorage);
+  navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_RUNTIME_CACHE' });
+  els.dataFreshness.textContent = 'API-кэш очищен';
+  showStatus(`Удалено кэшированных профилей: ${removed}. Черновики и настройки сохранены.`, 'success');
+}
+
+function renderDataFreshness(data, cached) {
+  const generatedAt = Number.isFinite(Date.parse(data.generatedAt)) ? new Date(data.generatedAt) : new Date();
+  const mode = cached ? 'кэш' : 'свежие данные';
+  els.dataFreshness.textContent = `${mode} · ${generatedAt.toLocaleString('ru-RU', { dateStyle: 'short', timeStyle: 'short' })}`;
+  els.dataFreshness.title = `Источник: ${data.source || 'неизвестен'}`;
+}
+
+function defaultDraftName() {
+  return `Резюме @${state.user?.login || state.resumeDraft?.name || 'developer'}`;
+}
+
+function formatSavedAt(value) {
+  const date = new Date(value);
+  return Number.isFinite(date.getTime())
+    ? date.toLocaleString('ru-RU', { dateStyle: 'short', timeStyle: 'short' })
+    : 'дата неизвестна';
+}
+
+function updateNetworkStatus() {
+  const online = navigator.onLine;
+  els.networkStatus.textContent = online ? 'Онлайн' : 'Офлайн';
+  els.networkStatus.classList.toggle('offline', !online);
+}
+
+function registerPwa() {
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(location.hostname))) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+  }
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    els.installButton.classList.remove('hidden');
+  });
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    els.installButton.classList.add('hidden');
+    showStatus('Auto Resume установлен как приложение.', 'success');
+  });
+}
+
+async function installPwa() {
+  if (!deferredInstallPrompt) return;
+  await deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  els.installButton.classList.add('hidden');
 }
 
 try {
