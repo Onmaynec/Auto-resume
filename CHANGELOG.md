@@ -11,6 +11,7 @@
 - добавлены privacy-safe заголовки и метрики HIT/MISS/STALE, backend latency и degraded mode;
 - обновлены environment template, threat model и deployment documentation;
 - добавлены unit и integration тесты Redis REST, TTL, partitioning, rate limits, fallback и denylist;
+- полный набор из 77 автоматических проверок проходит без ошибок;
 - версия проекта повышена до 3.2.0.
 
 ## v3.1.0 — 2026-08-01
