@@ -27,15 +27,9 @@ module.exports = async function handler(req, res) {
     if (session?.token && ['token', 'grant'].includes(mode)) {
       revoked = await revokeGitHubAccess(session.token, mode, config).catch(() => false);
     }
-    const invalidated = await denySession(session).catch(() => ({ value: false, backend: 'error' }));
+    await denySession(session).catch(() => ({ value: false, backend: 'error' }));
     clearSessionCookie(req, res);
-    return sendJson(res, 200, {
-      ok: true,
-      revoked,
-      mode,
-      sessionInvalidated: Boolean(invalidated.value),
-      sessionStore: invalidated.backend,
-    });
+    return sendJson(res, 200, { ok: true, revoked, mode });
   }
 
   res.setHeader('Allow', 'GET, DELETE');
