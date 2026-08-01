@@ -9,9 +9,12 @@ on:
       - api/_store.js
       - api/_profile-gateway.js
       - api/_session-state.js
+      - api/auth/session.js
       - tests/store.test.mjs
       - tests/profile-gateway.test.mjs
       - tests/session-state.test.mjs
+      - tests/update.test.mjs
+      - tests/v31-release.test.mjs
       - tests/v32-infrastructure.test.mjs
 
 permissions:
