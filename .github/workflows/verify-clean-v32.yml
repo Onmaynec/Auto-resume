@@ -1,0 +1,38 @@
+name: Verify v3.2 Release and Cleanup
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/verify-clean-v32.yml
+
+permissions:
+  contents: write
+
+jobs:
+  verify-and-clean:
+    if: github.head_ref == 'agent/v3.2-redis-rate-limit'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/v3.2-redis-rate-limit
+          fetch-depth: 0
+      - name: Verify stable GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          DATA="$(gh release view v3.2.0 --repo "$GITHUB_REPOSITORY" --json tagName,name,isDraft,isPrerelease,publishedAt)"
+          DATA="$DATA" node - <<'NODE'
+          const release = JSON.parse(process.env.DATA);
+          if (release.tagName !== 'v3.2.0') throw new Error('Unexpected release tag');
+          if (release.name !== 'Auto Resume v3.2.0') throw new Error('Unexpected release name');
+          if (release.isDraft || release.isPrerelease || !release.publishedAt) throw new Error('Release is not stable and published');
+          console.log(JSON.stringify(release));
+          NODE
+      - name: Delete completed work branch
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: git push origin --delete "$HEAD_REF"
