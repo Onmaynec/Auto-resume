@@ -64,7 +64,7 @@ GitHub endpoints are fulfilled with fixed fixtures. OAuth cookies, access tokens
 | Best Practices | 90 |
 | SEO | 90 |
 
-The audit also requires a working Service Worker and installable manifest. PWA offline behavior is additionally verified by Playwright rather than relying only on a static Lighthouse assertion.
+Current Lighthouse versions no longer expose the former installable-manifest and service-worker audits as stable assertion IDs. Manifest structure is covered by existing unit tests, while real Service Worker installation and offline reload are verified in Chromium by Playwright.
 
 ## CI artifacts
 
