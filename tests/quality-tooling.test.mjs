@@ -22,6 +22,7 @@ async function stopChild(child) {
 
 test('package exposes deterministic browser quality commands', async () => {
   const packageJson = JSON.parse(await read('package.json'));
+  assert.equal(packageJson.scripts.test, 'node --test tests/*.test.mjs');
   assert.equal(packageJson.scripts['test:e2e'], 'playwright test');
   assert.equal(packageJson.scripts['test:lighthouse'], 'lhci autorun --config=lighthouserc.cjs');
   assert.match(packageJson.scripts.check, /scripts\/test-server\.mjs/);
