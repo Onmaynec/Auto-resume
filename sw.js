@@ -1,11 +1,11 @@
-const SHELL_CACHE = 'auto-resume-v2.4-shell-v1';
-const RUNTIME_CACHE = 'auto-resume-v2.4-runtime-v1';
+const SHELL_CACHE = 'auto-resume-v3.0-shell-v1';
+const RUNTIME_CACHE = 'auto-resume-v3.0-runtime-v1';
 const APP_SHELL = [
-  './', './index.html', './styles.css', './v21.css', './v22.css', './app.js',
+  './', './index.html', './styles.css', './v21.css', './v22.css', './auth.css', './app.js',
   './manifest.webmanifest', './icons/app-icon.svg',
   './js/config.js', './js/data.js', './js/projects.js', './js/render.js', './js/resume.js',
   './js/utils.js', './js/project-selection.mjs', './js/resume-text.mjs', './js/share.mjs',
-  './js/vacancy.mjs', './js/preferences.mjs', './js/compare.mjs', './js/workspace.mjs', './js/i18n.mjs', './js/docx-export.mjs',
+  './js/vacancy.mjs', './js/preferences.mjs', './js/compare.mjs', './js/workspace.mjs', './js/i18n.mjs', './js/docx-export.mjs', './js/auth.mjs',
 ];
 self.addEventListener('install', (event) => { event.waitUntil(caches.open(SHELL_CACHE).then((cache) => cache.addAll(APP_SHELL))); self.skipWaiting(); });
 self.addEventListener('activate', (event) => { event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => ![SHELL_CACHE, RUNTIME_CACHE].includes(key)).map((key) => caches.delete(key)))).then(() => self.clients.claim())); });

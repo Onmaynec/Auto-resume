@@ -9,11 +9,12 @@ import { decodeSharePayload } from './js/share.mjs';
 import { analyzeVacancy } from './js/vacancy.mjs';
 import { clearProfileCache as clearCachedProfiles, createBackup, createDraftRecord, parseBackup, readWorkspace, removeDraft, renameDraft, upsertDraft, writeWorkspace } from './js/workspace.mjs';
 import { applyTranslations, formatDateTime, formatNumber, normalizeLocale, setLocale, t, translateError } from './js/i18n.mjs';
+import { initAuth, refreshAuthUi } from './js/auth.mjs';
 import { downloadBlob, escapeHtml, showStatus } from './js/utils.js';
 
 let preferences = readPreferences(window.localStorage); let workspace = readWorkspace(window.localStorage); let currentDraftId = null; let autosaveTimer = null; let deferredInstallPrompt = null; let lastDataFreshness = null;
 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
-state.locale = setLocale(preferences.locale); els.localeSelect.value = state.locale; bindProjectBuilder(); applyTheme(preferences.theme); renderRecentProfiles(); renderDrafts(); updateNetworkStatus(); registerPwa();
+state.locale = setLocale(preferences.locale); els.localeSelect.value = state.locale; bindProjectBuilder(); applyTheme(preferences.theme); renderRecentProfiles(); renderDrafts(); updateNetworkStatus(); registerPwa(); initAuth({ onAnalyzeSelf: (login) => { els.username.value = login; loadPrimaryProfile(login); } });
 
 els.form.addEventListener('submit', async (event) => { event.preventDefault(); await loadPrimaryProfile(normalizeUsername(els.username.value)); });
 els.recentProfiles.addEventListener('click', async (event) => { const button = event.target.closest('[data-recent-login]'); if (!button) return; els.username.value = button.dataset.recentLogin; await loadPrimaryProfile(button.dataset.recentLogin); });
@@ -50,14 +51,15 @@ async function loadPrimaryProfile(username) {
   document.body.classList.remove('draft-view'); showStatus(t('status.loading')); els.dashboard.classList.add('hidden'); els.resumeSection.classList.add('hidden'); els.form.querySelector('button').disabled = true;
   try {
     const { data, cached } = await getProfileData(username); state.currentData = data; applyData(data); renderAll(); els.dashboard.classList.remove('hidden'); els.compareResult.classList.add('hidden'); preferences.recentProfiles = addRecentProfile(preferences.recentProfiles, data.user); persistPreferences(); renderRecentProfiles(); renderDataFreshness(data, cached);
-    if (data.source === 'github-graphql') { const remaining = data.rateLimit?.remaining; showStatus(`${cached ? t('status.cached') : t('status.proxyLoaded')}${Number.isFinite(remaining) ? t('status.requestsLeft', { count: formatNumber(remaining) }) : ''}`, 'success'); }
+    if (data.auth?.privateContributionsIncluded) { showStatus(`${cached ? t('status.cached') : t('status.oauthSelfLoaded', { count: formatNumber(data.contributions?.restricted || 0) })}${Number.isFinite(data.rateLimit?.remaining) ? t('status.requestsLeft', { count: formatNumber(data.rateLimit.remaining) }) : ''}`, 'success'); }
+    else if (String(data.source || '').startsWith('github-graphql')) { const remaining = data.rateLimit?.remaining; const sourceKey = data.auth?.authenticated ? 'status.oauthPublicLoaded' : 'status.proxyLoaded'; showStatus(`${cached ? t('status.cached') : t(sourceKey)}${Number.isFinite(remaining) ? t('status.requestsLeft', { count: formatNumber(remaining) }) : ''}`, 'success'); }
     else showStatus(t('status.fallback'), 'warning');
   } catch (error) { showStatus(translateError(error, 'errors.profileLoad'), 'error'); }
   finally { els.form.querySelector('button').disabled = false; }
 }
 
 function refreshLocalizedUi() {
-  applyTranslations(document); els.localeSelect.value = state.locale; updateNetworkStatus(); renderRecentProfiles(); renderDrafts();
+  applyTranslations(document); refreshAuthUi(); els.localeSelect.value = state.locale; updateNetworkStatus(); renderRecentProfiles(); renderDrafts();
   if (state.currentData) renderAll(); if (state.comparison) renderComparison(state.comparison); if (state.resumeDraft) renderResume({ editable: !state.sharedMode }); if (lastDataFreshness) renderDataFreshness(lastDataFreshness.data, lastDataFreshness.cached);
 }
 function applyTheme(theme) { const normalized = normalizeTheme(theme); const resolved = resolveTheme(normalized, systemTheme.matches); document.documentElement.dataset.theme = resolved; document.documentElement.style.colorScheme = resolved; document.querySelector('meta[name="theme-color"]')?.setAttribute('content', resolved === 'light' ? '#f5f7fb' : '#070b12'); els.themeSelect.value = normalized; }

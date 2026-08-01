@@ -1,5 +1,17 @@
 # Changelog
 
+## v3.0.0 — 2026-08-01
+
+- добавлен GitHub OAuth Authorization Code Flow с PKCE S256 и `state`;
+- запрашивается только `read:user`, без доступа к коду приватных репозиториев;
+- OAuth token хранится только в AES-256-GCM encrypted HttpOnly-cookie;
+- добавлены session status, logout и отзыв GitHub grant;
+- собственная аналитика включает private/internal contributions;
+- authenticated self responses отделены от публичного кэша и используют `no-store`;
+- добавлены threat model, environment template и OAuth security tests;
+- полный набор из 53 автоматических проверок проходит без ошибок;
+- версия пакета обновлена до 3.0.0.
+
 ## v2.4.0 — 2026-08-01
 
 - добавлен локальный экспорт в DOCX с настоящим текстовым слоем и кликабельными ссылками;

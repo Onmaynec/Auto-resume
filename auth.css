@@ -1,0 +1,18 @@
+.auth-control { display: flex; align-items: center; }
+.auth-login { white-space: nowrap; }
+.auth-menu { position: relative; }
+.auth-summary { display: flex; align-items: center; gap: .5rem; min-height: 38px; padding: .35rem .65rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); cursor: pointer; list-style: none; font-size: .82rem; }
+.auth-summary::-webkit-details-marker { display: none; }
+.auth-summary img, .auth-avatar { width: 25px; height: 25px; border-radius: 50%; object-fit: cover; display: grid; place-items: center; background: var(--surface-strong); font-size: .65rem; }
+.auth-popover { position: absolute; z-index: 30; right: 0; top: calc(100% + .55rem); width: min(290px, 86vw); padding: 1rem; display: grid; gap: .45rem; border: 1px solid var(--border); border-radius: 16px; background: var(--card); box-shadow: 0 24px 70px rgba(0,0,0,.25); }
+.auth-popover > span, .auth-popover > small { color: var(--muted); }
+.auth-popover .text-button { justify-self: start; }
+.auth-dialog { width: min(560px, calc(100vw - 2rem)); padding: 0; border: 0; border-radius: 22px; background: transparent; color: inherit; }
+.auth-dialog::backdrop { background: rgba(3, 7, 18, .72); backdrop-filter: blur(7px); }
+.auth-dialog-card { position: relative; padding: 1.5rem; border: 1px solid var(--border); border-radius: 22px; background: var(--card); box-shadow: 0 28px 100px rgba(0,0,0,.42); }
+.auth-dialog-card h2 { margin: .3rem 0 .65rem; }
+.auth-dialog-card ul { display: grid; gap: .55rem; padding-left: 1.25rem; color: var(--muted); }
+.auth-security-note { padding: .8rem; border-radius: 12px; background: var(--surface); color: var(--muted); font-size: .88rem; }
+.auth-dialog-close { position: absolute; top: .75rem; right: .85rem; border: 0; background: transparent; color: var(--muted); font-size: 1.6rem; cursor: pointer; }
+.auth-private-pill { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .55rem; border-radius: 999px; background: rgba(34,197,94,.12); color: #22c55e; font-size: .75rem; font-weight: 700; }
+@media (max-width: 850px) { .auth-summary span { display: none; } .auth-popover { position: fixed; right: 1rem; top: 5rem; } }

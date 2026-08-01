@@ -13,13 +13,13 @@ export async function getProfileData(username) {
 export function applyData(data) {
   state.user = data.user; state.repos = Array.isArray(data.repos) ? data.repos.filter((repo) => !repo.fork) : [];
   state.contributions = { total: Number(data.contributions?.total || 0), commits: Number(data.contributions?.commits || 0), restricted: Number(data.contributions?.restricted || 0), calendar: normalizeCalendar(data.contributions?.calendar || []) };
-  state.languageHistory = normalizeLanguageHistory(data.languageHistory || []); state.source = data.source || 'unknown'; state.rateLimit = data.rateLimit || null;
+  state.languageHistory = normalizeLanguageHistory(data.languageHistory || []); state.source = data.source || 'unknown'; state.rateLimit = data.rateLimit || null; state.auth = data.auth || null;
   state.vacancyAnalysis = null; state.resumeDraft = null; state.comparison = null; aggregateLanguages(); buildMonthlyActivity(); state.selectedProjects = defaultSelection(state.repos);
 }
 async function loadFromProxy(username) {
   const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 20_000);
   try {
-    const response = await fetch(`${PROXY_ENDPOINT}?username=${encodeURIComponent(username)}`, { headers: { Accept: 'application/json' }, signal: controller.signal });
+    const response = await fetch(`${PROXY_ENDPOINT}?username=${encodeURIComponent(username)}`, { headers: { Accept: 'application/json' }, credentials: 'same-origin', cache: 'no-store', signal: controller.signal });
     const contentType = response.headers.get('content-type') || ''; if (!contentType.includes('application/json')) throw new ProxyUnavailableError();
     const payload = await response.json();
     if (!response.ok) {
@@ -34,7 +34,7 @@ async function loadFromProxy(username) {
 async function loadDirectFallback(username) {
   const [userResult, reposResult] = await Promise.all([directApi(`/users/${encodeURIComponent(username)}`), directApi(`/users/${encodeURIComponent(username)}/repos?per_page=100&sort=updated`)]);
   const repos = reposResult.data.filter((repo) => !repo.fork).map((repo) => ({ ...repo, languages: repo.language ? { [repo.language]: 1 } : {}, topics: repo.topics || [] }));
-  return { version: 2, generatedAt: new Date().toISOString(), source: 'github-rest-fallback', user: userResult.data, repos,
+  return { version: 3, generatedAt: new Date().toISOString(), source: 'github-rest-fallback', auth: { authenticated: false, self: false, privateContributionsIncluded: false, privateRepositoryCode: false }, user: userResult.data, repos,
     contributions: { total: 0, commits: 0, restricted: 0, calendar: [] }, languageHistory: [], rateLimit: reposResult.rateLimit || userResult.rateLimit };
 }
 async function directApi(path) {
@@ -57,5 +57,6 @@ function normalizeCalendar(calendar) {
 }
 function normalizeLanguageHistory(history) { return history.map((month) => ({ key: month.key, label: month.label || month.key, total: Number(month.total || 0), languages: Object.fromEntries(Object.entries(month.languages || {}).map(([name, value]) => [name, { count: Number(typeof value === 'object' ? value.count : value), color: typeof value === 'object' ? value.color : null }])) })); }
 function buildMonthlyActivity() { const months = {}; for (let index = 11; index >= 0; index -= 1) { const date = new Date(); date.setUTCDate(1); date.setUTCMonth(date.getUTCMonth() - index); months[date.toISOString().slice(0, 7)] = 0; } state.contributions.calendar.forEach((day) => { const key = day.date.slice(0, 7); if (key in months) months[key] += day.count; }); state.monthly = months; }
-function readCache(username) { try { const key = `auto-resume:v2:${username.toLowerCase()}`; const raw = localStorage.getItem(key); if (!raw) return null; const cached = JSON.parse(raw); if (!cached.savedAt || Date.now() - cached.savedAt > CACHE_TTL) { localStorage.removeItem(key); return null; } return cached.data; } catch { return null; } }
-function writeCache(username, data) { try { localStorage.setItem(`auto-resume:v2:${username.toLowerCase()}`, JSON.stringify({ savedAt: Date.now(), data })); } catch { /* optional */ } }
+function cacheKey(username) { let authLogin = ''; try { authLogin = String(sessionStorage.getItem('auto-resume:auth-login') || '').toLowerCase(); } catch { /* optional */ } const login = username.toLowerCase(); const partition = authLogin && authLogin === login ? `oauth-self:${authLogin}` : 'public'; return `auto-resume:v3:${partition}:${login}`; }
+function readCache(username) { try { const key = cacheKey(username); const raw = localStorage.getItem(key); if (!raw) return null; const cached = JSON.parse(raw); if (!cached.savedAt || Date.now() - cached.savedAt > CACHE_TTL) { localStorage.removeItem(key); return null; } return cached.data; } catch { return null; } }
+function writeCache(username, data) { try { localStorage.setItem(cacheKey(username), JSON.stringify({ savedAt: Date.now(), data })); } catch { /* optional */ } }
