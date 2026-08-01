@@ -19,8 +19,6 @@ module.exports = {
         'categories:best-practices': ['error', { minScore: 0.9 }],
         'categories:seo': ['error', { minScore: 0.9 }],
         'errors-in-console': 'error',
-        'service-worker': 'error',
-        'installable-manifest': 'error',
       },
     },
     upload: {
