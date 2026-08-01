@@ -27,7 +27,7 @@ test('update UI and browser module are connected safely', () => {
   assert.match(html, /update\.css/);
   assert.match(updateModule, /textContent/);
   assert.doesNotMatch(updateModule, /innerHTML/);
-  assert.match(updateModule, /releases\/latest/);
+  assert.match(versionModule, /releases\/latest/);
   assert.match(updateCss, /prefers-reduced-motion/);
 });
 
