@@ -43,7 +43,7 @@ test('quality fixtures do not contain credential-shaped secrets', async () => {
   assert.doesNotMatch(content, /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/);
 });
 
-test('test server serves a deterministic shell and local API fallback', async (context) => {
+test('test server serves a deterministic shell and local API fixtures', async (context) => {
   const port = 4199;
   const child = spawn(process.execPath, ['scripts/test-server.mjs', `--port=${port}`, '--quality-stubs'], {
     cwd: root,
@@ -79,4 +79,11 @@ test('test server serves a deterministic shell and local API fallback', async (c
     scopes: [],
     capabilities: {},
   });
+
+  const profileResponse = await fetch(`http://127.0.0.1:${port}/api/github?username=octocat`);
+  assert.equal(profileResponse.status, 200);
+  const profile = await profileResponse.json();
+  assert.equal(profile.user.login, 'octocat');
+  assert.equal(profile.user.name, 'Octo Cat');
+  assert.equal(profile.repos.length, 3);
 });
