@@ -1,0 +1,33 @@
+name: Verify v3.1 GitHub Release
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened]
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    if: github.head_ref == 'agent/verify-v3.1-release'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify published release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release view v3.1.0 --repo "$GITHUB_REPOSITORY" --json tagName,name,url,isDraft,isPrerelease,publishedAt > release.json
+          cat release.json
+          test "$(jq -r .tagName release.json)" = "v3.1.0"
+          test "$(jq -r .name release.json)" = "Auto Resume v3.1.0"
+          test "$(jq -r .isDraft release.json)" = "false"
+          test "$(jq -r .isPrerelease release.json)" = "false"
+          test "$(jq -r .publishedAt release.json)" != "null"
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/verify-v3.1-release
+          fetch-depth: 0
+      - name: Delete verification branch
+        run: git push origin --delete agent/verify-v3.1-release
