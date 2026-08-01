@@ -1,0 +1,34 @@
+name: Delete v2.3 work branch
+
+on:
+  pull_request:
+    types: [opened]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.event.pull_request.head.ref == 'agent/v2.3-localization'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete completed v2.3 branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          API_URL: ${{ github.api_url }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --output /tmp/delete-response --write-out '%{http_code}' \
+            -X DELETE \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "$API_URL/repos/$REPOSITORY/git/refs/heads/agent/v2.3-localization")
+          if [[ "$status" == "204" || "$status" == "404" || "$status" == "422" ]]; then
+            echo "Branch cleanup completed with HTTP $status."
+            exit 0
+          fi
+          cat /tmp/delete-response
+          exit 1
