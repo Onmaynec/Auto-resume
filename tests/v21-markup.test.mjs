@@ -10,7 +10,7 @@ test('v2.1 theme, history and comparison controls are present', () => {
     assert.match(html, new RegExp(`id="${id}"`));
   }
   assert.match(html, /Перейти к содержимому/);
-  assert.match(html, /v2\.1/);
+  assert.match(html, /v2\.[12]/);
 });
 
 test('v2.1 accessibility and reduced-motion styles exist', () => {

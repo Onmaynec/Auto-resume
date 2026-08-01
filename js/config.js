@@ -54,4 +54,13 @@ export const els = {
   compareUsername: $('#compareUsername'),
   compareButton: $('#compareBtn'),
   compareResult: $('#compareResult'),
+  installButton: $('#installBtn'),
+  networkStatus: $('#networkStatus'),
+  dataFreshness: $('#dataFreshness'),
+  draftName: $('#draftName'),
+  saveDraft: $('#saveDraftBtn'),
+  draftList: $('#draftList'),
+  exportBackup: $('#exportBackupBtn'),
+  importBackup: $('#importBackupInput'),
+  clearProfileCache: $('#clearProfileCacheBtn'),
 };
