@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { profileFixture } from '../tests/e2e/support.mjs';
 
 const root = resolve(fileURLToPath(new URL('../', import.meta.url)));
 const portArgument = process.argv.find((argument) => argument.startsWith('--port='));
@@ -56,7 +57,11 @@ function handleApi(request, response, url) {
   }
 
   if (url.pathname === '/api/github') {
-    json(response, 501, { code: 'PROXY_NOT_CONFIGURED' });
+    if (qualityStubs) {
+      json(response, 200, profileFixture(url.searchParams.get('username') || 'octocat'));
+    } else {
+      json(response, 501, { code: 'PROXY_NOT_CONFIGURED' });
+    }
     return true;
   }
 
