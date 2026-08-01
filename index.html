@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Auto Resume v2.2 — PWA-генератор резюме по GitHub с локальными черновиками, сравнением профилей и ATS-экспортом." />
+  <meta name="description" content="Auto Resume v2.3 — двуязычный PWA-генератор резюме по GitHub." />
   <meta name="theme-color" content="#070b12" />
-  <meta property="og:title" content="Auto Resume v2.2" />
-  <meta property="og:description" content="GitHub-профиль → адаптированное резюме, локальные черновики, сравнение профилей и публичная ссылка." />
-  <title>Auto Resume v2.2 — GitHub Resume Generator</title>
+  <meta property="og:title" content="Auto Resume v2.3" />
+  <meta property="og:description" content="GitHub-профиль → адаптированное резюме на русском или английском." />
+  <title>Auto Resume v2.3 — GitHub Resume Generator</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,65 +21,62 @@
   <link rel="stylesheet" href="v22.css" />
 </head>
 <body>
-  <a class="skip-link" href="#mainContent">Перейти к содержимому</a>
+  <a class="skip-link" href="#mainContent" data-i18n="skip">Перейти к содержимому</a>
   <div class="noise"></div>
-  <div id="sharedBanner" class="shared-banner hidden">Публичное резюме · данные зашиты в ссылку и не хранятся на сервере</div>
+  <div id="sharedBanner" class="shared-banner hidden" data-i18n="shared.banner">Публичное резюме · данные зашиты в ссылку и не хранятся на сервере</div>
   <header class="hero container">
-    <nav class="nav glass" aria-label="Основная навигация">
-      <a class="brand" href="./"><span class="brand-mark">AR</span><span>Auto Resume <small>v2.2</small></span></a>
+    <nav class="nav glass" data-i18n-aria-label="nav.main" aria-label="Основная навигация">
+      <a class="brand" href="./"><span class="brand-mark">AR</span><span>Auto Resume <small>v2.3</small></span></a>
       <div class="nav-actions">
         <span id="networkStatus" class="network-status" role="status" aria-live="polite">Онлайн</span>
-        <button id="installBtn" class="btn btn-secondary btn-compact hidden" type="button">Установить</button>
+        <button id="installBtn" class="btn btn-secondary btn-compact hidden" type="button" data-i18n="nav.install">Установить</button>
+        <label class="theme-control" for="localeSelect">
+          <span data-i18n="nav.language">Язык</span>
+          <select id="localeSelect" aria-label="Language"><option value="ru">RU</option><option value="en">EN</option></select>
+        </label>
         <label class="theme-control" for="themeSelect">
-          <span>Тема</span>
-          <select id="themeSelect" aria-label="Цветовая тема">
-            <option value="system">Системная</option>
-            <option value="dark">Тёмная</option>
-            <option value="light">Светлая</option>
+          <span data-i18n="nav.theme">Тема</span>
+          <select id="themeSelect" data-i18n-aria-label="nav.theme" aria-label="Цветовая тема">
+            <option value="system" data-i18n="theme.system">Системная</option>
+            <option value="dark" data-i18n="theme.dark">Тёмная</option>
+            <option value="light" data-i18n="theme.light">Светлая</option>
           </select>
         </label>
         <a class="nav-link" href="https://github.com/Onmaynec/Auto-resume" target="_blank" rel="noreferrer">GitHub ↗</a>
       </div>
     </nav>
     <div class="hero-copy">
-      <div class="eyebrow">GitHub + вакансия → персональное резюме</div>
-      <h1>Покажите рекрутеру именно те навыки, которые он ищет.</h1>
-      <p>Приложение анализирует профиль, историю языков и требования вакансии, сравнивает разработчиков и сохраняет редактируемые резюме локально.</p>
+      <div class="eyebrow" data-i18n="hero.eyebrow">GitHub + вакансия → персональное резюме</div>
+      <h1 data-i18n="hero.title">Покажите рекрутеру именно те навыки, которые он ищет.</h1>
+      <p data-i18n="hero.description">Приложение анализирует профиль, историю языков и требования вакансии, сравнивает разработчиков и сохраняет редактируемые резюме локально.</p>
       <form id="searchForm" class="search glass">
-        <label class="sr-only" for="username">GitHub username</label>
+        <label class="sr-only" for="username" data-i18n="search.label">GitHub username</label>
         <span class="search-icon" aria-hidden="true">⌕</span>
-        <input id="username" autocomplete="username" placeholder="GitHub username, например torvalds" required />
-        <button class="btn btn-primary" type="submit">Анализировать</button>
+        <input id="username" autocomplete="username" data-i18n-placeholder="search.placeholder" placeholder="GitHub username, например torvalds" required />
+        <button class="btn btn-primary" type="submit" data-i18n="search.button">Анализировать</button>
       </form>
       <section id="recentProfilesSection" class="recent-profiles hidden" aria-labelledby="recentProfilesTitle">
-        <div class="recent-heading">
-          <span id="recentProfilesTitle">Недавние профили</span>
-          <button id="clearRecentBtn" class="text-button" type="button">Очистить</button>
-        </div>
+        <div class="recent-heading"><span id="recentProfilesTitle" data-i18n="recent.title">Недавние профили</span><button id="clearRecentBtn" class="text-button" type="button" data-i18n="common.clear">Очистить</button></div>
         <div id="recentProfiles" class="recent-list"></div>
       </section>
 
       <section id="workspacePanel" class="workspace-panel glass" aria-labelledby="workspaceTitle">
         <div class="workspace-heading">
-          <div><span class="kicker">Локальное рабочее пространство</span><h2 id="workspaceTitle">Черновики и резервные копии</h2></div>
-          <span id="dataFreshness" class="freshness-pill">GitHub-данные ещё не загружены</span>
+          <div><span class="kicker" data-i18n="workspace.kicker">Локальное рабочее пространство</span><h2 id="workspaceTitle" data-i18n="workspace.title">Черновики и резервные копии</h2></div>
+          <span id="dataFreshness" class="freshness-pill" data-i18n="workspace.freshness.empty">GitHub-данные ещё не загружены</span>
         </div>
-        <p class="workspace-note">Черновики, тема и история профилей хранятся только в этом браузере. Резервная копия позволяет перенести их на другое устройство.</p>
+        <p class="workspace-note" data-i18n="workspace.note">Черновики, тема, язык и история профилей хранятся только в этом браузере.</p>
         <div class="workspace-controls">
-          <label class="draft-name-field" for="draftName">
-            <span>Название черновика</span>
-            <input id="draftName" maxlength="120" placeholder="Например: Frontend Developer — Acme" />
-          </label>
-          <button id="saveDraftBtn" class="btn btn-primary" type="button">Сохранить черновик</button>
-          <button id="exportBackupBtn" class="btn btn-secondary" type="button">Экспорт JSON</button>
-          <label class="btn btn-secondary file-button" for="importBackupInput">Импорт JSON</label>
+          <label class="draft-name-field" for="draftName"><span data-i18n="workspace.draftName">Название черновика</span><input id="draftName" maxlength="120" data-i18n-placeholder="workspace.draftPlaceholder" placeholder="Например: Frontend Developer — Acme" /></label>
+          <button id="saveDraftBtn" class="btn btn-primary" type="button" data-i18n="workspace.save">Сохранить черновик</button>
+          <button id="exportBackupBtn" class="btn btn-secondary" type="button" data-i18n="workspace.export">Экспорт JSON</button>
+          <label class="btn btn-secondary file-button" for="importBackupInput" data-i18n="workspace.import">Импорт JSON</label>
           <input id="importBackupInput" class="sr-only" type="file" accept="application/json,.json" />
-          <button id="clearProfileCacheBtn" class="btn btn-secondary" type="button">Очистить API-кэш</button>
+          <button id="clearProfileCacheBtn" class="btn btn-secondary" type="button" data-i18n="workspace.clearCache">Очистить API-кэш</button>
         </div>
         <div id="draftList" class="draft-list" aria-live="polite"></div>
       </section>
-
-      <p class="microcopy">Используются публичные данные. История, черновики и настройки остаются в вашем браузере.</p>
+      <p class="microcopy" data-i18n="privacy.microcopy">Используются публичные данные. История, черновики и настройки остаются в вашем браузере.</p>
     </div>
   </header>
 
@@ -88,99 +85,40 @@
     <section id="dashboard" class="dashboard hidden">
       <div class="profile-grid">
         <article id="profileCard" class="card profile-card"></article>
-        <article class="card metrics-card">
-          <div class="section-heading"><div><span class="kicker">Обзор</span><h2>Ключевые показатели</h2></div></div>
-          <div id="metrics" class="metrics"></div>
-        </article>
+        <article class="card metrics-card"><div class="section-heading"><div><span class="kicker" data-i18n="overview.kicker">Обзор</span><h2 data-i18n="overview.title">Ключевые показатели</h2></div></div><div id="metrics" class="metrics"></div></article>
       </div>
 
       <section class="card compare-card" aria-labelledby="compareTitle">
-        <div class="section-heading">
-          <div><span class="kicker">Сравнение</span><h2 id="compareTitle">Сравнение GitHub-профилей</h2></div>
-          <span class="pill">публичные данные</span>
-        </div>
-        <p class="section-note">Введите второй username, чтобы сравнить активность, популярность проектов и пересечение технологий.</p>
-        <form id="compareForm" class="compare-form">
-          <label class="sr-only" for="compareUsername">Username второго профиля</label>
-          <input id="compareUsername" autocomplete="off" placeholder="Второй GitHub username" required />
-          <button id="compareBtn" class="btn btn-primary" type="submit">Сравнить</button>
-        </form>
+        <div class="section-heading"><div><span class="kicker" data-i18n="compare.kicker">Сравнение</span><h2 id="compareTitle" data-i18n="compare.title">Сравнение GitHub-профилей</h2></div><span class="pill" data-i18n="compare.public">публичные данные</span></div>
+        <p class="section-note" data-i18n="compare.note">Введите второй username, чтобы сравнить активность, популярность проектов и пересечение технологий.</p>
+        <form id="compareForm" class="compare-form"><label class="sr-only" for="compareUsername" data-i18n="compare.label">Username второго профиля</label><input id="compareUsername" autocomplete="off" data-i18n-placeholder="compare.placeholder" placeholder="Второй GitHub username" required /><button id="compareBtn" class="btn btn-primary" type="submit" data-i18n="compare.button">Сравнить</button></form>
         <div id="compareResult" class="compare-result hidden" aria-live="polite"></div>
       </section>
 
-      <section id="tipsCard" class="card tips-card hidden">
-        <div class="section-heading"><div><span class="kicker">Profile boost</span><h2>Подсказки по улучшению</h2></div></div>
-        <div id="tips" class="tips"></div>
-      </section>
+      <section id="tipsCard" class="card tips-card hidden"><div class="section-heading"><div><span class="kicker" data-i18n="tips.kicker">Profile boost</span><h2 data-i18n="tips.title">Подсказки по улучшению</h2></div></div><div id="tips" class="tips"></div></section>
 
       <section class="charts-grid">
-        <article class="card activity-card">
-          <div class="section-heading"><div><span class="kicker">Последние 12 месяцев</span><h2>Активность</h2></div><span id="commitCount" class="pill"></span></div>
-          <div id="heatmap" class="heatmap" aria-label="Календарь активности"></div>
-          <div class="heatmap-legend"><span>Меньше</span><i data-level="0"></i><i data-level="1"></i><i data-level="2"></i><i data-level="3"></i><i data-level="4"></i><span>Больше</span></div>
-        </article>
-        <article class="card">
-          <div class="section-heading"><div><span class="kicker">По месяцам</span><h2>Динамика активности</h2></div></div>
-          <div class="chart-wrap"><canvas id="activityChart"></canvas></div>
-        </article>
+        <article class="card activity-card"><div class="section-heading"><div><span class="kicker" data-i18n="activity.lastYear">Последние 12 месяцев</span><h2 data-i18n="activity.title">Активность</h2></div><span id="commitCount" class="pill"></span></div><div id="heatmap" class="heatmap" data-i18n-aria-label="activity.calendar" aria-label="Календарь активности"></div><div class="heatmap-legend"><span data-i18n="activity.less">Меньше</span><i data-level="0"></i><i data-level="1"></i><i data-level="2"></i><i data-level="3"></i><i data-level="4"></i><span data-i18n="activity.more">Больше</span></div></article>
+        <article class="card"><div class="section-heading"><div><span class="kicker" data-i18n="activity.monthly">По месяцам</span><h2 data-i18n="activity.dynamics">Динамика активности</h2></div></div><div class="chart-wrap"><canvas id="activityChart"></canvas></div></article>
       </section>
 
-      <section class="card language-history-card">
-        <div class="section-heading"><div><span class="kicker">Реальная commit-активность</span><h2>История языков по месяцам</h2></div><span class="pill">по primary language репозитория</span></div>
-        <p class="section-note">График группирует реальные commit contributions пользователя по основному языку репозитория в каждом месяце.</p>
-        <div class="chart-wrap chart-wrap-large"><canvas id="languageHistoryChart"></canvas></div>
-        <div id="languageHistoryEmpty" class="empty-state hidden">История языков недоступна в экономном REST-режиме.</div>
-      </section>
+      <section class="card language-history-card"><div class="section-heading"><div><span class="kicker" data-i18n="languages.kicker">Реальная commit-активность</span><h2 data-i18n="languages.title">История языков по месяцам</h2></div><span class="pill" data-i18n="languages.pill">по primary language репозитория</span></div><p class="section-note" data-i18n="languages.note">График группирует реальные commit contributions пользователя.</p><div class="chart-wrap chart-wrap-large"><canvas id="languageHistoryChart"></canvas></div><div id="languageHistoryEmpty" class="empty-state hidden" data-i18n="languages.empty">История языков недоступна.</div></section>
 
-      <section class="card vacancy-card">
-        <div class="section-heading"><div><span class="kicker">Подбор под вакансию</span><h2>Анализ вакансии</h2></div><span class="pill">локальный анализ · без отправки текста ИИ</span></div>
-        <p class="section-note">Вставьте требования вакансии. Приложение найдёт технологии, сравнит их с профилем и поднимет самые релевантные проекты.</p>
-        <label class="sr-only" for="vacancyText">Описание вакансии</label>
-        <textarea id="vacancyText" rows="8" placeholder="Вставьте описание вакансии: стек, обязанности, обязательные и желательные навыки…"></textarea>
-        <div class="inline-actions">
-          <button id="analyzeVacancyBtn" class="btn btn-primary" type="button">Сопоставить с профилем</button>
-          <button id="clearVacancyBtn" class="btn btn-secondary" type="button">Очистить</button>
-        </div>
-        <div id="vacancyResult" class="vacancy-result hidden"></div>
-      </section>
+      <section class="card vacancy-card"><div class="section-heading"><div><span class="kicker" data-i18n="vacancy.kicker">Подбор под вакансию</span><h2 data-i18n="vacancy.title">Анализ вакансии</h2></div><span class="pill" data-i18n="vacancy.pill">локальный анализ</span></div><p class="section-note" data-i18n="vacancy.note">Вставьте требования вакансии.</p><label class="sr-only" for="vacancyText" data-i18n="vacancy.label">Описание вакансии</label><textarea id="vacancyText" rows="8" data-i18n-placeholder="vacancy.placeholder" placeholder="Вставьте описание вакансии…"></textarea><div class="inline-actions"><button id="analyzeVacancyBtn" class="btn btn-primary" type="button" data-i18n="vacancy.analyze">Сопоставить с профилем</button><button id="clearVacancyBtn" class="btn btn-secondary" type="button" data-i18n="common.clear">Очистить</button></div><div id="vacancyResult" class="vacancy-result hidden"></div></section>
 
-      <section class="card repo-section">
-        <div class="section-heading"><div><span class="kicker">Портфолио</span><h2>Репозитории</h2></div><span id="repoCount" class="pill"></span></div>
-        <div id="repos" class="repo-grid"></div>
-      </section>
+      <section class="card repo-section"><div class="section-heading"><div><span class="kicker" data-i18n="repos.kicker">Портфолио</span><h2 data-i18n="repos.title">Репозитории</h2></div><span id="repoCount" class="pill"></span></div><div id="repos" class="repo-grid"></div></section>
 
-      <section class="card project-builder-card">
-        <div class="section-heading"><div><span class="kicker">Конструктор</span><h2>Проекты для резюме</h2></div><span id="projectSelectionCount" class="pill"></span></div>
-        <p class="section-note">Выберите до пяти проектов. Перетаскивайте выбранные карточки или используйте стрелки, чтобы задать порядок.</p>
-        <div id="projectBuilder" class="project-builder"></div>
-      </section>
+      <section class="card project-builder-card"><div class="section-heading"><div><span class="kicker" data-i18n="projects.kicker">Конструктор</span><h2 data-i18n="projects.title">Проекты для резюме</h2></div><span id="projectSelectionCount" class="pill"></span></div><p class="section-note" data-i18n="projects.note">Выберите до пяти проектов.</p><div id="projectBuilder" class="project-builder"></div></section>
 
-      <section class="generate-panel glass">
-        <div><span class="kicker">Следующий шаг</span><h2>Соберите адаптированное резюме</h2><p>Если вакансия проанализирована, заголовок, описание и проекты будут ориентированы на её требования.</p></div>
-        <button id="generateBtn" class="btn btn-primary btn-large">Сгенерировать резюме ✨</button>
-      </section>
+      <section class="generate-panel glass"><div><span class="kicker" data-i18n="generate.kicker">Следующий шаг</span><h2 data-i18n="generate.title">Соберите адаптированное резюме</h2><p data-i18n="generate.note">Если вакансия проанализирована, резюме будет адаптировано.</p></div><button id="generateBtn" class="btn btn-primary btn-large" data-i18n="generate.button">Сгенерировать резюме ✨</button></section>
 
       <section id="resumeSection" class="resume-layout hidden">
-        <article id="resume" class="resume-paper resume-visual" aria-label="Редактируемое резюме"></article>
-        <aside class="resume-actions card">
-          <span class="kicker">Редактор</span><h2>Ваше резюме</h2>
-          <p>Нажмите на любой текст в макете, чтобы изменить его. Изменения активного черновика сохраняются автоматически.</p>
-          <div class="template-switch" role="group" aria-label="Шаблон резюме">
-            <button type="button" class="active" data-template-button="visual">Visual</button>
-            <button type="button" data-template-button="ats">ATS</button>
-          </div>
-          <button id="copyBtn" class="btn btn-secondary">Копировать текст</button>
-          <button id="txtBtn" class="btn btn-secondary">Скачать TXT</button>
-          <button id="visualPdfBtn" class="btn btn-primary">Визуальный PDF</button>
-          <button id="atsPdfBtn" class="btn btn-primary hidden">Сохранить ATS PDF</button>
-          <button id="shareBtn" class="btn btn-accent">Скопировать публичную ссылку</button>
-          <small>Публичная ссылка содержит резюме в URL-фрагменте. Сервер его не хранит и не получает.</small>
-        </aside>
+        <article id="resume" class="resume-paper resume-visual" data-i18n-aria-label="editor.title" aria-label="Редактируемое резюме"></article>
+        <aside class="resume-actions card"><span class="kicker" data-i18n="editor.kicker">Редактор</span><h2 data-i18n="editor.title">Ваше резюме</h2><p data-i18n="editor.note">Нажмите на любой текст.</p><div class="template-switch" role="group" data-i18n-aria-label="editor.template" aria-label="Шаблон резюме"><button type="button" class="active" data-template-button="visual">Visual</button><button type="button" data-template-button="ats">ATS</button></div><button id="copyBtn" class="btn btn-secondary" data-i18n="editor.copy">Копировать текст</button><button id="txtBtn" class="btn btn-secondary" data-i18n="editor.txt">Скачать TXT</button><button id="visualPdfBtn" class="btn btn-primary" data-i18n="editor.visualPdf">Визуальный PDF</button><button id="atsPdfBtn" class="btn btn-primary hidden" data-i18n="editor.atsPdf">Сохранить ATS PDF</button><button id="shareBtn" class="btn btn-accent" data-i18n="editor.share">Скопировать публичную ссылку</button><small data-i18n="editor.shareNote">Публичная ссылка содержит резюме в URL-фрагменте.</small></aside>
       </section>
     </section>
   </main>
-
-  <footer class="container footer"><p>GitHub GraphQL API · Auto Resume v2.2 · PWA, локальные черновики и резервные копии</p></footer>
+  <footer class="container footer"><p data-i18n="footer">GitHub GraphQL API · Auto Resume v2.3</p></footer>
   <script type="module" src="app.js"></script>
 </body>
 </html>

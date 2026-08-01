@@ -1,21 +1,5 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { buildResumeText, safeFilename } from '../js/resume-text.mjs';
-
-test('ATS text export preserves project order and links', () => {
-  const text = buildResumeText({
-    name: 'Ada Lovelace', headline: 'Software Developer', contact: 'github.com/ada', about: 'About',
-    projects: [
-      { name: 'First', description: 'One', url: 'https://example.com/1' },
-      { name: 'Second', description: 'Two', url: 'https://example.com/2' },
-    ],
-    skills: [{ name: 'JavaScript', percent: 60 }, { name: 'Python', percent: 40 }],
-  });
-  assert.ok(text.indexOf('First') < text.indexOf('Second'));
-  assert.match(text, /Ссылка: https:\/\/example.com\/1/);
-  assert.match(text, /JavaScript — 60%/);
-});
-
-test('safe filename removes unsafe characters', () => {
-  assert.equal(safeFilename(' John / Doe: Resume '), 'John-Doe-Resume');
-});
+import test from 'node:test'; import assert from 'node:assert/strict'; import { buildResumeText, safeFilename } from '../js/resume-text.mjs';
+const draft = { name: 'Ada Lovelace', headline: 'Software Developer', contact: 'github.com/ada', about: 'About', projects: [{ name: 'First', description: 'One', url: 'https://example.com/1' }, { name: 'Second', description: 'Two', url: 'https://example.com/2' }], skills: [{ name: 'JavaScript', percent: 60 }, { name: 'Python', percent: 40 }] };
+test('Russian ATS text preserves order and links', () => { const text = buildResumeText(draft, 'ru'); assert.ok(text.indexOf('First') < text.indexOf('Second')); assert.match(text, /Ссылка: https:\/\/example.com\/1/); assert.match(text, /НАВЫКИ/); });
+test('English ATS text uses English section labels', () => { const text = buildResumeText(draft, 'en'); assert.match(text, /Link: https:\/\/example.com\/1/); assert.match(text, /ABOUT/); assert.match(text, /PROJECTS/); assert.doesNotMatch(text, /О СЕБЕ/); });
+test('safe filename removes unsafe characters', () => assert.equal(safeFilename(' John / Doe: Resume '), 'John-Doe-Resume'));
