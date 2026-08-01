@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Auto Resume v2.3 — двуязычный PWA-генератор резюме по GitHub." />
+  <meta name="description" content="Auto Resume v2.4 — двуязычный PWA-генератор резюме по GitHub." />
   <meta name="theme-color" content="#070b12" />
-  <meta property="og:title" content="Auto Resume v2.3" />
+  <meta property="og:title" content="Auto Resume v2.4" />
   <meta property="og:description" content="GitHub-профиль → адаптированное резюме на русском или английском." />
-  <title>Auto Resume v2.3 — GitHub Resume Generator</title>
+  <title>Auto Resume v2.4 — GitHub Resume Generator</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,7 +26,7 @@
   <div id="sharedBanner" class="shared-banner hidden" data-i18n="shared.banner">Публичное резюме · данные зашиты в ссылку и не хранятся на сервере</div>
   <header class="hero container">
     <nav class="nav glass" data-i18n-aria-label="nav.main" aria-label="Основная навигация">
-      <a class="brand" href="./"><span class="brand-mark">AR</span><span>Auto Resume <small>v2.3</small></span></a>
+      <a class="brand" href="./"><span class="brand-mark">AR</span><span>Auto Resume <small>v2.4</small></span></a>
       <div class="nav-actions">
         <span id="networkStatus" class="network-status" role="status" aria-live="polite">Онлайн</span>
         <button id="installBtn" class="btn btn-secondary btn-compact hidden" type="button" data-i18n="nav.install">Установить</button>
@@ -114,11 +114,11 @@
 
       <section id="resumeSection" class="resume-layout hidden">
         <article id="resume" class="resume-paper resume-visual" data-i18n-aria-label="editor.title" aria-label="Редактируемое резюме"></article>
-        <aside class="resume-actions card"><span class="kicker" data-i18n="editor.kicker">Редактор</span><h2 data-i18n="editor.title">Ваше резюме</h2><p data-i18n="editor.note">Нажмите на любой текст.</p><div class="template-switch" role="group" data-i18n-aria-label="editor.template" aria-label="Шаблон резюме"><button type="button" class="active" data-template-button="visual">Visual</button><button type="button" data-template-button="ats">ATS</button></div><button id="copyBtn" class="btn btn-secondary" data-i18n="editor.copy">Копировать текст</button><button id="txtBtn" class="btn btn-secondary" data-i18n="editor.txt">Скачать TXT</button><button id="visualPdfBtn" class="btn btn-primary" data-i18n="editor.visualPdf">Визуальный PDF</button><button id="atsPdfBtn" class="btn btn-primary hidden" data-i18n="editor.atsPdf">Сохранить ATS PDF</button><button id="shareBtn" class="btn btn-accent" data-i18n="editor.share">Скопировать публичную ссылку</button><small data-i18n="editor.shareNote">Публичная ссылка содержит резюме в URL-фрагменте.</small></aside>
+        <aside class="resume-actions card"><span class="kicker" data-i18n="editor.kicker">Редактор</span><h2 data-i18n="editor.title">Ваше резюме</h2><p data-i18n="editor.note">Нажмите на любой текст.</p><div class="template-switch" role="group" data-i18n-aria-label="editor.template" aria-label="Шаблон резюме"><button type="button" class="active" data-template-button="visual">Visual</button><button type="button" data-template-button="ats">ATS</button></div><button id="copyBtn" class="btn btn-secondary" data-i18n="editor.copy">Копировать текст</button><button id="txtBtn" class="btn btn-secondary" data-i18n="editor.txt">Скачать TXT</button><button id="markdownBtn" class="btn btn-secondary" data-i18n="editor.markdown">Скачать Markdown</button><button id="docxBtn" class="btn btn-primary" data-i18n="editor.docx">Скачать DOCX</button><button id="visualPdfBtn" class="btn btn-primary" data-i18n="editor.visualPdf">Визуальный PDF</button><button id="atsPdfBtn" class="btn btn-primary hidden" data-i18n="editor.atsPdf">Сохранить ATS PDF</button><button id="shareBtn" class="btn btn-accent" data-i18n="editor.share">Скопировать публичную ссылку</button><small data-i18n="editor.shareNote">Публичная ссылка содержит резюме в URL-фрагменте.</small></aside>
       </section>
     </section>
   </main>
-  <footer class="container footer"><p data-i18n="footer">GitHub GraphQL API · Auto Resume v2.3</p></footer>
+  <footer class="container footer"><p data-i18n="footer">GitHub GraphQL API · Auto Resume v2.4</p></footer>
   <script type="module" src="app.js"></script>
 </body>
 </html>

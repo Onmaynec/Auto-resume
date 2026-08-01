@@ -1,7 +1,7 @@
 {
   "name": "Auto Resume — GitHub Resume Generator",
   "short_name": "Auto Resume",
-  "description": "Bilingual GitHub resume generator with local drafts, ATS export and job matching.",
+  "description": "Bilingual GitHub resume generator with local drafts, DOCX, Markdown, ATS export and job matching.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
