@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -18,5 +22,59 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Verify source and tests
+      - name: Install quality dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Verify source and unit tests
         run: npm run verify
+
+  browser-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run Playwright and axe checks
+        run: npm run test:e2e
+      - name: Upload Playwright failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-failure-${{ github.run_id }}
+          path: |
+            artifacts/playwright-report
+            test-results/playwright
+          if-no-files-found: ignore
+          retention-days: 7
+
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Expose Chromium to Lighthouse
+        run: node -p "'CHROME_PATH=' + require('playwright').chromium.executablePath()" >> "$GITHUB_ENV"
+      - name: Run Lighthouse budgets
+        run: npm run test:lighthouse
+      - name: Upload Lighthouse failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-failure-${{ github.run_id }}
+          path: artifacts/lighthouse
+          if-no-files-found: ignore
+          retention-days: 7
