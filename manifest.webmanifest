@@ -1,7 +1,7 @@
 {
   "name": "Auto Resume — GitHub Resume Generator",
   "short_name": "Auto Resume",
-  "description": "Генератор профессионального резюме по GitHub с локальными черновиками, ATS-экспортом и анализом вакансии.",
+  "description": "Bilingual GitHub resume generator with local drafts, ATS export and job matching.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
@@ -9,14 +9,7 @@
   "orientation": "any",
   "background_color": "#070b12",
   "theme_color": "#070b12",
-  "lang": "ru",
+  "lang": "en",
   "categories": ["productivity", "business", "utilities"],
-  "icons": [
-    {
-      "src": "icons/app-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
-  ]
+  "icons": [{ "src": "icons/app-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
 }
