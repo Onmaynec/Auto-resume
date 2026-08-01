@@ -1,12 +1,14 @@
+const { readSession } = require('./_auth');
+
 const CACHE_TTL_MS = 15 * 60 * 1000;
 const REQUEST_WINDOW_MS = 10 * 60 * 1000;
 const REQUEST_LIMIT = 20;
 const USERNAME_RE = /^[a-z\d](?:[a-z\d-]{0,37}[a-z\d])?$/i;
 
-const responseCache = globalThis.__autoResumeV2Cache || new Map();
-const requestWindows = globalThis.__autoResumeV2RequestWindows || new Map();
-globalThis.__autoResumeV2Cache = responseCache;
-globalThis.__autoResumeV2RequestWindows = requestWindows;
+const responseCache = globalThis.__autoResumeV3Cache || new Map();
+const requestWindows = globalThis.__autoResumeV3RequestWindows || new Map();
+globalThis.__autoResumeV3Cache = responseCache;
+globalThis.__autoResumeV3RequestWindows = requestWindows;
 
 module.exports = async function handler(req, res) {
   setSecurityHeaders(res);
@@ -18,10 +20,11 @@ module.exports = async function handler(req, res) {
   const username = String(req.query.username || '').replace(/^@/, '').trim();
   if (!USERNAME_RE.test(username)) return sendJson(res, 400, { code: 'INVALID_USERNAME', error: 'Некорректный GitHub username.' });
 
-  const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
-  if (!token) return sendJson(res, 503, { code: 'PROXY_NOT_CONFIGURED', error: 'На сервере не задан GITHUB_TOKEN.' });
+  const session = readSession(req);
+  const auth = resolveAuthContext(username, session, process.env.GITHUB_TOKEN || process.env.GH_TOKEN);
+  if (!auth.token) return sendJson(res, 503, { code: 'PROXY_NOT_CONFIGURED', error: 'На сервере не задан GITHUB_TOKEN и отсутствует OAuth-сессия.' });
 
-  const rateState = consumeRequest(getClientId(req));
+  const rateState = consumeRequest(getClientId(req, session));
   res.setHeader('X-Auto-Resume-Limit', String(REQUEST_LIMIT));
   res.setHeader('X-Auto-Resume-Remaining', String(rateState.remaining));
   if (!rateState.allowed) {
@@ -32,29 +35,57 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  const cacheKey = username.toLowerCase();
+  const cacheKey = auth.privateContributionsIncluded
+    ? `oauth-self:${session.user.id}:${username.toLowerCase()}`
+    : `public:${username.toLowerCase()}`;
   const cached = responseCache.get(cacheKey);
   if (cached && cached.expiresAt > Date.now()) {
     res.setHeader('X-Auto-Resume-Cache', 'HIT');
+    setResponseCachePolicy(res, auth.privateContributionsIncluded);
     return sendJson(res, 200, cached.data);
   }
 
   try {
-    const data = await fetchGitHubProfile(username, token);
+    const data = await fetchGitHubProfile(username, auth.token, auth);
     responseCache.set(cacheKey, { data, expiresAt: Date.now() + CACHE_TTL_MS });
     pruneMaps();
     res.setHeader('X-Auto-Resume-Cache', 'MISS');
-    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=900, stale-while-revalidate=3600');
+    setResponseCachePolicy(res, auth.privateContributionsIncluded);
     return sendJson(res, 200, data);
   } catch (error) {
     if (error.code === 'USER_NOT_FOUND') return sendJson(res, 404, { code: error.code, error: 'Пользователь не найден. Проверьте username.' });
     if (error.code === 'GITHUB_RATE_LIMIT') return sendJson(res, 429, { code: error.code, error: 'Лимит GitHub API исчерпан.', resetAt: error.resetAt || null });
-    console.error('Auto Resume API error:', error);
+    console.error('Auto Resume API error:', error.code || error.name || 'unknown');
     return sendJson(res, 502, { code: 'GITHUB_UPSTREAM_ERROR', error: 'GitHub временно не отвечает. Попробуйте ещё раз позже.' });
   }
 };
 
-async function fetchGitHubProfile(username, token) {
+function resolveAuthContext(username, session, serverToken) {
+  if (session?.token && session?.user?.login) {
+    const self = session.user.login.toLowerCase() === String(username).toLowerCase();
+    const scopes = Array.isArray(session.scopes) ? session.scopes : [];
+    return {
+      token: session.token,
+      authenticated: true,
+      self,
+      login: session.user.login,
+      scopes,
+      privateContributionsIncluded: self && scopes.includes('read:user'),
+      source: self ? 'github-graphql-oauth-self' : 'github-graphql-oauth-public',
+    };
+  }
+  return {
+    token: serverToken || '',
+    authenticated: false,
+    self: false,
+    login: null,
+    scopes: [],
+    privateContributionsIncluded: false,
+    source: 'github-graphql',
+  };
+}
+
+async function fetchGitHubProfile(username, token, auth) {
   const months = buildMonthRanges(new Date());
   const query = buildQuery(months.length);
   const annualFrom = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
@@ -73,8 +104,8 @@ async function fetchGitHubProfile(username, token) {
         Accept: 'application/vnd.github+json',
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
-        'User-Agent': 'Onmaynec-Auto-Resume-v2',
-        'X-GitHub-Api-Version': '2022-11-28',
+        'User-Agent': 'Onmaynec-Auto-Resume-v3',
+        'X-GitHub-Api-Version': process.env.GITHUB_API_VERSION || '2022-11-28',
       },
       body: JSON.stringify({ query, variables }),
       signal: controller.signal,
@@ -83,6 +114,7 @@ async function fetchGitHubProfile(username, token) {
     const payload = await response.json();
     if (!response.ok) {
       const error = new Error(`GitHub GraphQL HTTP ${response.status}`);
+      if (response.status === 401) error.code = 'OAUTH_SESSION_EXPIRED';
       if (response.status === 403 || response.status === 429) {
         error.code = 'GITHUB_RATE_LIMIT';
         error.resetAt = response.headers.get('x-ratelimit-reset')
@@ -112,14 +144,20 @@ async function fetchGitHubProfile(username, token) {
     const calendar = user.contributionsCollection.contributionCalendar.weeks
       .flatMap((week) => week.contributionDays)
       .map((day) => ({ date: day.date, count: day.contributionCount, level: day.contributionLevel, weekday: day.weekday }));
-
     const repos = user.repositories.nodes.map(normalizeRepository);
     const languageHistory = months.map((month, index) => normalizeLanguageMonth(month, user[`month${index}`]));
 
     return {
-      version: 2,
+      version: 3,
       generatedAt: new Date().toISOString(),
-      source: 'github-graphql',
+      source: auth.source,
+      auth: {
+        authenticated: auth.authenticated,
+        self: auth.self,
+        login: auth.login,
+        privateContributionsIncluded: auth.privateContributionsIncluded,
+        privateRepositoryCode: false,
+      },
       user: {
         login: user.login,
         name: user.name,
@@ -156,7 +194,7 @@ function buildQuery(monthCount) {
       }`).join('\n');
 
   return `
-    query AutoResumeV2($login: String!, $from: DateTime!, $to: DateTime!, ${monthVariables}) {
+    query AutoResumeV3($login: String!, $from: DateTime!, $to: DateTime!, ${monthVariables}) {
       rateLimit { limit cost remaining resetAt }
       user(login: $login) {
         login name avatarUrl bio location url
@@ -246,7 +284,8 @@ function consumeRequest(clientId) {
   return { allowed: current.count <= REQUEST_LIMIT, remaining: Math.max(0, REQUEST_LIMIT - current.count), resetAt: current.resetAt };
 }
 
-function getClientId(req) {
+function getClientId(req, session) {
+  if (session?.user?.id) return `oauth:${session.user.id}`;
   const forwarded = req.headers['x-forwarded-for'];
   if (Array.isArray(forwarded)) return forwarded[0];
   if (typeof forwarded === 'string') return forwarded.split(',')[0].trim();
@@ -257,6 +296,13 @@ function pruneMaps() {
   const now = Date.now();
   if (responseCache.size > 250) for (const [key, value] of responseCache) if (value.expiresAt <= now) responseCache.delete(key);
   if (requestWindows.size > 500) for (const [key, value] of requestWindows) if (value.resetAt <= now) requestWindows.delete(key);
+}
+
+function setResponseCachePolicy(res, privateResponse) {
+  res.setHeader('Cache-Control', privateResponse
+    ? 'private, no-store, max-age=0'
+    : 'public, max-age=0, s-maxage=900, stale-while-revalidate=3600');
+  if (privateResponse) res.setHeader('Vary', 'Cookie');
 }
 
 function setSecurityHeaders(res) {
@@ -270,4 +316,4 @@ function sendJson(res, status, body) {
   return res.status(status).end(JSON.stringify(body));
 }
 
-module.exports._private = { buildMonthRanges, buildQuery, normalizeLanguageMonth, normalizeRepository };
+module.exports._private = { buildMonthRanges, buildQuery, normalizeLanguageMonth, normalizeRepository, resolveAuthContext, setResponseCachePolicy };

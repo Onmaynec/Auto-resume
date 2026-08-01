@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Auto Resume v2.4 — двуязычный PWA-генератор резюме по GitHub." />
+  <meta name="description" content="Auto Resume v3.0 — двуязычный PWA-генератор резюме по GitHub." />
   <meta name="theme-color" content="#070b12" />
-  <meta property="og:title" content="Auto Resume v2.4" />
+  <meta property="og:title" content="Auto Resume v3.0" />
   <meta property="og:description" content="GitHub-профиль → адаптированное резюме на русском или английском." />
-  <title>Auto Resume v2.4 — GitHub Resume Generator</title>
+  <title>Auto Resume v3.0 — GitHub Resume Generator</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="v21.css" />
   <link rel="stylesheet" href="v22.css" />
+  <link rel="stylesheet" href="auth.css" />
 </head>
 <body>
   <a class="skip-link" href="#mainContent" data-i18n="skip">Перейти к содержимому</a>
@@ -26,7 +27,7 @@
   <div id="sharedBanner" class="shared-banner hidden" data-i18n="shared.banner">Публичное резюме · данные зашиты в ссылку и не хранятся на сервере</div>
   <header class="hero container">
     <nav class="nav glass" data-i18n-aria-label="nav.main" aria-label="Основная навигация">
-      <a class="brand" href="./"><span class="brand-mark">AR</span><span>Auto Resume <small>v2.4</small></span></a>
+      <a class="brand" href="./"><span class="brand-mark">AR</span><span>Auto Resume <small>v3.0</small></span></a>
       <div class="nav-actions">
         <span id="networkStatus" class="network-status" role="status" aria-live="polite">Онлайн</span>
         <button id="installBtn" class="btn btn-secondary btn-compact hidden" type="button" data-i18n="nav.install">Установить</button>
@@ -118,7 +119,7 @@
       </section>
     </section>
   </main>
-  <footer class="container footer"><p data-i18n="footer">GitHub GraphQL API · Auto Resume v2.4</p></footer>
+  <footer class="container footer"><p data-i18n="footer">GitHub GraphQL API · Auto Resume v3.0</p></footer>
   <script type="module" src="app.js"></script>
 </body>
 </html>

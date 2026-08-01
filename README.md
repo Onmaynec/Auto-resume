@@ -1,6 +1,16 @@
-# ✨ Auto Resume v2.4
+# ✨ Auto Resume v3.0
 
 > GitHub-профиль превращается в адаптированное, редактируемое и публичное резюме на русском или английском языке.
+
+
+## 🔐 Что нового в v3.0
+
+- опциональный GitHub OAuth-вход через Authorization Code Flow + PKCE S256;
+- минимальный scope `read:user`: приватная/internal статистика вкладов для собственного профиля без доступа к коду;
+- AES-256-GCM encrypted session в `HttpOnly`, `Secure`, `SameSite=Lax` cookie;
+- просмотр статуса сессии, выход и полное отключение с отзывом GitHub grant;
+- отдельный cache partition и `no-store` для authenticated self analytics;
+- гостевой режим, публичные ссылки, PWA и локальные черновики продолжают работать без OAuth.
 
 ## 🆕 Что нового
 
@@ -71,6 +81,16 @@ GITHUB_TOKEN=ваш_токен
 ```
 
 Токен используется только serverless-функцией `api/github.js`. Экспорт DOCX/Markdown работает и без этой переменной.
+
+
+## 🔑 Настройка GitHub OAuth
+
+1. Создайте GitHub OAuth App.
+2. Укажите callback: `https://ваш-домен/api/auth/callback`.
+3. Добавьте в Vercel переменные из `.env.example`: `GITHUB_OAUTH_CLIENT_ID`, `GITHUB_OAUTH_CLIENT_SECRET`, `GITHUB_CALLBACK_URL` и случайный `SESSION_SECRET` длиной не менее 32 символов.
+4. Выполните новый deployment.
+
+Auto Resume запрашивает только `read:user`. Этот scope добавляет собственные private/internal contributions, но не даёт доступа к коду приватных репозиториев. Токен не попадает в HTML, URL, JavaScript или `localStorage`. Подробности и ограничения описаны в `docs/THREAT_MODEL.md`.
 
 ## ▶️ Локальный запуск
 
