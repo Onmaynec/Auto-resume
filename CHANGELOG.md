@@ -1,5 +1,18 @@
 # Changelog
 
+## v3.1.0 — 2026-08-01
+
+- добавлена фоновая проверка последнего стабильного GitHub Release;
+- добавлено RU/EN уведомление об обновлении с release notes и действиями «Обновить сейчас» / «Позже»;
+- Service Worker загружает новый app shell в фоне и применяет его только после подтверждения пользователя;
+- локальные черновики, настройки, история и OAuth-сессия не очищаются при обновлении;
+- добавлены строгая SemVer-проверка и фильтрация недоверенных release payload/URL;
+- добавлен идемпотентный GitHub Actions workflow: проверка → тег `vX.Y.Z` → GitHub Release;
+- release notes автоматически извлекаются из соответствующей секции `CHANGELOG.md`;
+- workflow поддерживает ручной `workflow_dispatch` и не создаёт дубликаты тегов или релизов;
+- добавлены unit и integration проверки update lifecycle, PWA cache и release workflow;
+- версия проекта повышена до 3.1.0.
+
 ## v3.0.0 — 2026-08-01
 
 - добавлен GitHub OAuth Authorization Code Flow с PKCE S256 и `state`;
