@@ -1,17 +1,16 @@
 name: Apply v3.0 release
 
 on:
-  push:
-    branches: [agent/v3.0-oauth-private-analytics]
-    paths:
-      - '.release/v30.part.*'
-      - '.github/workflows/apply-v30.yml'
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
 
 jobs:
   apply:
+    if: github.head_ref == 'agent/v3.0-oauth-private-analytics'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,5 +34,3 @@ jobs:
           git add -A
           git commit -m "Release Auto Resume v3.0"
           git push origin HEAD:agent/v3.0-oauth-private-analytics
-
-# Separate trigger commit ensures GitHub registers this new workflow.
