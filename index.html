@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Auto Resume v3.0 — двуязычный PWA-генератор резюме по GitHub." />
+  <meta name="description" content="Auto Resume v3.1 — двуязычный PWA-генератор резюме по GitHub." />
   <meta name="theme-color" content="#070b12" />
-  <meta property="og:title" content="Auto Resume v3.0" />
+  <meta property="og:title" content="Auto Resume v3.1" />
   <meta property="og:description" content="GitHub-профиль → адаптированное резюме на русском или английском." />
-  <title>Auto Resume v3.0 — GitHub Resume Generator</title>
+  <title>Auto Resume v3.1 — GitHub Resume Generator</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="v21.css" />
   <link rel="stylesheet" href="v22.css" />
   <link rel="stylesheet" href="auth.css" />
+  <link rel="stylesheet" href="update.css" />
 </head>
 <body>
   <a class="skip-link" href="#mainContent" data-i18n="skip">Перейти к содержимому</a>
@@ -119,7 +120,23 @@
       </section>
     </section>
   </main>
-  <footer class="container footer"><p data-i18n="footer">GitHub GraphQL API · Auto Resume v3.0</p></footer>
+  <section id="updateBanner" class="update-banner hidden" role="status" aria-live="polite" aria-labelledby="updateTitle">
+    <div class="update-banner__head">
+      <div class="update-banner__copy">
+        <span id="updateKicker" class="kicker">GitHub Release</span>
+        <h2 id="updateTitle">Доступно обновление</h2>
+        <p id="updateMessage">Новая версия приложения готова к установке.</p>
+      </div>
+    </div>
+    <div class="update-banner__actions">
+      <button id="updateApplyBtn" class="btn btn-primary" type="button">Обновить сейчас</button>
+      <button id="updateLaterBtn" class="btn btn-secondary" type="button">Позже</button>
+      <a id="updateNotes" class="text-button" href="https://github.com/Onmaynec/Auto-resume/releases" target="_blank" rel="noreferrer">Что изменилось ↗</a>
+    </div>
+    <small id="updateStatus" class="update-banner__status"></small>
+  </section>
+  <footer class="container footer"><p data-i18n="footer">GitHub GraphQL API · Auto Resume v3.1</p></footer>
   <script type="module" src="app.js"></script>
+  <script type="module" src="js/update.mjs"></script>
 </body>
 </html>
