@@ -2,7 +2,7 @@ import { els, state } from './js/config.js';
 import { applyData, getProfileData, isValidUsername, normalizeUsername } from './js/data.js';
 import { bindProjectBuilder, renderProjectBuilder } from './js/projects.js';
 import { renderAll, renderVacancyResult } from './js/render.js';
-import { copyResume, copyShareLink, downloadText, downloadVisualPdf, generateResume, printAtsPdf, renderResume, renderSharedResume, setTemplate } from './js/resume.js';
+import { copyResume, copyShareLink, downloadDocx, downloadMarkdown, downloadText, downloadVisualPdf, generateResume, printAtsPdf, renderResume, renderSharedResume, setTemplate } from './js/resume.js';
 import { compareProfiles } from './js/compare.mjs';
 import { addRecentProfile, normalizeTheme, readPreferences, resolveTheme, writePreferences } from './js/preferences.mjs';
 import { decodeSharePayload } from './js/share.mjs';
@@ -41,7 +41,7 @@ els.vacancyButton.addEventListener('click', () => {
 });
 document.querySelector('#clearVacancyBtn').addEventListener('click', () => { els.vacancyText.value = ''; state.vacancyAnalysis = null; renderVacancyResult(); });
 els.generate.addEventListener('click', () => { generateResume(); currentDraftId = null; els.draftName.value = defaultDraftName(); saveCurrentDraft({ silent: true }); });
-document.querySelector('#copyBtn').addEventListener('click', copyResume); document.querySelector('#txtBtn').addEventListener('click', downloadText); document.querySelector('#visualPdfBtn').addEventListener('click', downloadVisualPdf); document.querySelector('#atsPdfBtn').addEventListener('click', printAtsPdf); document.querySelector('#shareBtn').addEventListener('click', copyShareLink);
+document.querySelector('#copyBtn').addEventListener('click', copyResume); document.querySelector('#txtBtn').addEventListener('click', downloadText); document.querySelector('#markdownBtn').addEventListener('click', downloadMarkdown); document.querySelector('#docxBtn').addEventListener('click', downloadDocx); document.querySelector('#visualPdfBtn').addEventListener('click', downloadVisualPdf); document.querySelector('#atsPdfBtn').addEventListener('click', printAtsPdf); document.querySelector('#shareBtn').addEventListener('click', copyShareLink);
 document.querySelectorAll('[data-template-button]').forEach((button) => button.addEventListener('click', () => { setTemplate(button.dataset.templateButton); scheduleAutosave(); }));
 els.resume.addEventListener('input', scheduleAutosave); els.saveDraft.addEventListener('click', () => saveCurrentDraft()); els.draftList.addEventListener('click', handleDraftAction); els.exportBackup.addEventListener('click', exportLocalBackup); els.importBackup.addEventListener('change', importLocalBackup); els.clearProfileCache.addEventListener('click', clearProfileCaches); els.installButton.addEventListener('click', installPwa); window.addEventListener('online', updateNetworkStatus); window.addEventListener('offline', updateNetworkStatus);
 

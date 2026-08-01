@@ -1,9 +1,9 @@
 {
   "name": "auto-resume",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "private": true,
   "scripts": {
-    "check": "node --check app.js && node --check sw.js && node --check js/config.js && node --check js/data.js && node --check js/projects.js && node --check js/render.js && node --check js/resume.js && node --check js/utils.js && node --check js/project-selection.mjs && node --check js/resume-text.mjs && node --check js/share.mjs && node --check js/vacancy.mjs && node --check js/preferences.mjs && node --check js/compare.mjs && node --check js/workspace.mjs && node --check js/i18n.mjs && node --check api/github.js",
+    "check": "node --check app.js && node --check sw.js && node --check js/config.js && node --check js/data.js && node --check js/projects.js && node --check js/render.js && node --check js/resume.js && node --check js/utils.js && node --check js/project-selection.mjs && node --check js/resume-text.mjs && node --check js/share.mjs && node --check js/vacancy.mjs && node --check js/preferences.mjs && node --check js/compare.mjs && node --check js/workspace.mjs && node --check js/i18n.mjs && node --check js/docx-export.mjs && node --check api/github.js",
     "test": "node --test",
     "verify": "npm run check && npm test && git diff --check"
   }
