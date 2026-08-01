@@ -7,6 +7,18 @@ import { resolve } from 'node:path';
 
 const root = resolve(fileURLToPath(new URL('../', import.meta.url)));
 const read = (path) => readFile(resolve(root, path), 'utf8');
+const sleep = (milliseconds) => new Promise((resolvePromise) => setTimeout(resolvePromise, milliseconds));
+
+async function stopChild(child) {
+  if (child.exitCode !== null || child.signalCode !== null) return;
+  const exited = new Promise((resolvePromise) => child.once('exit', resolvePromise));
+  child.kill('SIGTERM');
+  await Promise.race([exited, sleep(2_000)]);
+  if (child.exitCode === null && child.signalCode === null) {
+    child.kill('SIGKILL');
+    await exited;
+  }
+}
 
 test('package exposes deterministic browser quality commands', async () => {
   const packageJson = JSON.parse(await read('package.json'));
@@ -43,47 +55,50 @@ test('quality fixtures do not contain credential-shaped secrets', async () => {
   assert.doesNotMatch(content, /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/);
 });
 
-test('test server serves a deterministic shell and local API fixtures', async (context) => {
+test('test server serves a deterministic shell and local API fixtures', async () => {
   const port = 4199;
   const child = spawn(process.execPath, ['scripts/test-server.mjs', `--port=${port}`, '--quality-stubs'], {
     cwd: root,
-    stdio: ['ignore', 'pipe', 'pipe'],
+    stdio: 'ignore',
   });
-  context.after(() => child.kill('SIGTERM'));
 
-  let ready = false;
-  for (let attempt = 0; attempt < 40; attempt += 1) {
-    try {
-      const response = await fetch(`http://127.0.0.1:${port}/healthz`);
-      if (response.ok) { ready = true; break; }
-    } catch {
-      await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
+  try {
+    let ready = false;
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      try {
+        const response = await fetch(`http://127.0.0.1:${port}/healthz`);
+        if (response.ok) { ready = true; break; }
+      } catch {
+        await sleep(100);
+      }
     }
+    assert.equal(ready, true, 'quality test server did not become ready');
+
+    const html = await (await fetch(`http://127.0.0.1:${port}/`)).text();
+    assert.match(html, /\/__quality__\/chart\.js/);
+    assert.match(html, /\/__quality__\/html2canvas\.js/);
+    assert.match(html, /\/__quality__\/jspdf\.js/);
+    assert.doesNotMatch(html, /fonts\.googleapis\.com/);
+    assert.doesNotMatch(html, /cdnjs\.cloudflare\.com/);
+    assert.doesNotMatch(html, /cdn\.jsdelivr\.net/);
+
+    const sessionResponse = await fetch(`http://127.0.0.1:${port}/api/auth/session`);
+    assert.equal(sessionResponse.status, 200);
+    assert.deepEqual(await sessionResponse.json(), {
+      configured: false,
+      authenticated: false,
+      user: null,
+      scopes: [],
+      capabilities: {},
+    });
+
+    const profileResponse = await fetch(`http://127.0.0.1:${port}/api/github?username=octocat`);
+    assert.equal(profileResponse.status, 200);
+    const profile = await profileResponse.json();
+    assert.equal(profile.user.login, 'octocat');
+    assert.equal(profile.user.name, 'Octo Cat');
+    assert.equal(profile.repos.length, 3);
+  } finally {
+    await stopChild(child);
   }
-  assert.equal(ready, true, 'quality test server did not become ready');
-
-  const html = await (await fetch(`http://127.0.0.1:${port}/`)).text();
-  assert.match(html, /\/__quality__\/chart\.js/);
-  assert.match(html, /\/__quality__\/html2canvas\.js/);
-  assert.match(html, /\/__quality__\/jspdf\.js/);
-  assert.doesNotMatch(html, /fonts\.googleapis\.com/);
-  assert.doesNotMatch(html, /cdnjs\.cloudflare\.com/);
-  assert.doesNotMatch(html, /cdn\.jsdelivr\.net/);
-
-  const sessionResponse = await fetch(`http://127.0.0.1:${port}/api/auth/session`);
-  assert.equal(sessionResponse.status, 200);
-  assert.deepEqual(await sessionResponse.json(), {
-    configured: false,
-    authenticated: false,
-    user: null,
-    scopes: [],
-    capabilities: {},
-  });
-
-  const profileResponse = await fetch(`http://127.0.0.1:${port}/api/github?username=octocat`);
-  assert.equal(profileResponse.status, 200);
-  const profile = await profileResponse.json();
-  assert.equal(profile.user.login, 'octocat');
-  assert.equal(profile.user.name, 'Octo Cat');
-  assert.equal(profile.repos.length, 3);
 });
