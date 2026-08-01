@@ -1,4 +1,4 @@
-const APP_VERSION = '3.1.0';
+const APP_VERSION = '3.2.0';
 const SHELL_CACHE = `auto-resume-v${APP_VERSION}-shell-v1`;
 const RUNTIME_CACHE = `auto-resume-v${APP_VERSION}-runtime-v1`;
 const APP_SHELL = [

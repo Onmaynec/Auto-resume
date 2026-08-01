@@ -1,6 +1,15 @@
-# ✨ Auto Resume v3.1
+# ✨ Auto Resume v3.2
 
 > GitHub-профиль превращается в адаптированное, редактируемое и публичное резюме на русском или английском языке.
+
+## 🗄️ Что нового в v3.2
+
+- общий serverless-кэш через Upstash Redis REST или совместимые Vercel KV переменные;
+- распределённый rate limiting между разными serverless-инстансами;
+- stale-while-revalidate и защита от одновременных одинаковых GitHub GraphQL-запросов;
+- автоматический memory fallback при отсутствии или временном сбое Redis;
+- опциональный denylist для принудительного завершения OAuth-сессий;
+- Redis никогда не получает OAuth-токен, текст вакансии или содержимое резюме.
 
 ## 🔄 Что нового в v3.1
 
@@ -104,6 +113,18 @@ GITHUB_TOKEN=ваш_токен
 5. публикует GitHub Release.
 
 Установленное PWA обращается только к публичному endpoint `releases/latest`. Ответ проверяется, а внешняя ссылка принимается только с домена GitHub и из репозитория `Onmaynec/Auto-resume`. Новый app shell остаётся в состоянии waiting до подтверждения пользователя, поэтому редактирование резюме не прерывается внезапной перезагрузкой.
+
+## 🧱 Redis/KV для production
+
+Для общего кэша и rate limiting между serverless-инстансами задайте:
+
+```text
+UPSTASH_REDIS_REST_URL=https://…upstash.io
+UPSTASH_REDIS_REST_TOKEN=…
+RATE_LIMIT_SECRET=случайная_строка
+```
+
+Также поддерживаются алиасы `KV_REST_API_URL` и `KV_REST_API_TOKEN`. Без этих переменных используется memory fallback. `SESSION_DENYLIST_ENABLED=true` включает распределённое завершение сессий; в Redis записываются только HMAC-хэш идентификатора сессии и время отзыва с TTL.
 
 ## 🔑 Настройка GitHub OAuth
 

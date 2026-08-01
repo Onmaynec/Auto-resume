@@ -1,8 +1,8 @@
 export const SUPPORTED_LOCALES = ['ru', 'en'];
 const dictionaries = {
   ru: {
-    'meta.title': 'Auto Resume v3.1 — GitHub Resume Generator',
-    'meta.description': 'Auto Resume v3.1 — двуязычный PWA-генератор резюме по GitHub с локальными черновиками, сравнением профилей и ATS-экспортом.',
+    'meta.title': 'Auto Resume v3.2 — GitHub Resume Generator',
+    'meta.description': 'Auto Resume v3.2 — двуязычный PWA-генератор резюме по GitHub с локальными черновиками, сравнением профилей и ATS-экспортом.',
     'meta.ogDescription': 'GitHub-профиль → адаптированное резюме на русском или английском, локальные черновики и публичная ссылка.',
     'nav.main': 'Основная навигация', 'nav.language': 'Язык', 'nav.theme': 'Тема',
     'theme.system': 'Системная', 'theme.dark': 'Тёмная', 'theme.light': 'Светлая',
@@ -55,7 +55,7 @@ const dictionaries = {
     'editor.template': 'Шаблон резюме', 'editor.copy': 'Копировать текст', 'editor.txt': 'Скачать TXT', 'editor.markdown': 'Скачать Markdown',
     'editor.docx': 'Скачать DOCX', 'editor.visualPdf': 'Визуальный PDF', 'editor.atsPdf': 'Сохранить ATS PDF', 'editor.share': 'Скопировать публичную ссылку',
     'editor.shareNote': 'Публичная ссылка содержит резюме в URL-фрагменте. Сервер его не хранит и не получает.',
-    'footer': 'GitHub GraphQL API · Auto Resume v3.1 · RU/EN, PWA, локальные черновики и резервные копии',
+    'footer': 'GitHub GraphQL API · Auto Resume v3.2 · RU/EN, PWA, локальные черновики и резервные копии',
     'profile.kicker': 'Профиль', 'profile.noBio': 'Описание профиля пока не добавлено.', 'profile.noLocation': 'Не указано',
     'profile.followers': '{count} подписчиков', 'profile.repositories': '{count} репозиториев',
     'metrics.stars': 'Звёзд', 'metrics.forks': 'Форков', 'metrics.commitsYear': 'Коммитов за год', 'metrics.commitsFallback': 'Коммитов*', 'metrics.languages': 'Языков',
@@ -122,8 +122,8 @@ const dictionaries = {
     'errors.shareOpen': 'Не удалось открыть публичное резюме.',
   },
   en: {
-    'meta.title': 'Auto Resume v3.1 — GitHub Resume Generator',
-    'meta.description': 'Auto Resume v3.1 — a bilingual PWA resume generator powered by GitHub, with local drafts, profile comparison and ATS export.',
+    'meta.title': 'Auto Resume v3.2 — GitHub Resume Generator',
+    'meta.description': 'Auto Resume v3.2 — a bilingual PWA resume generator powered by GitHub, with local drafts, profile comparison and ATS export.',
     'meta.ogDescription': 'Turn a GitHub profile into a tailored resume in English or Russian, with local drafts and a public link.',
     'nav.main': 'Main navigation', 'nav.language': 'Language', 'nav.theme': 'Theme',
     'theme.system': 'System', 'theme.dark': 'Dark', 'theme.light': 'Light',
@@ -176,7 +176,7 @@ const dictionaries = {
     'editor.template': 'Resume template', 'editor.copy': 'Copy text', 'editor.txt': 'Download TXT', 'editor.markdown': 'Download Markdown',
     'editor.docx': 'Download DOCX', 'editor.visualPdf': 'Visual PDF', 'editor.atsPdf': 'Save ATS PDF', 'editor.share': 'Copy public link',
     'editor.shareNote': 'The public link contains the resume in the URL fragment. The server does not store or receive it.',
-    'footer': 'GitHub GraphQL API · Auto Resume v3.1 · RU/EN, PWA, local drafts and backups',
+    'footer': 'GitHub GraphQL API · Auto Resume v3.2 · RU/EN, PWA, local drafts and backups',
     'profile.kicker': 'Profile', 'profile.noBio': 'No profile description yet.', 'profile.noLocation': 'Not specified',
     'profile.followers': '{count} followers', 'profile.repositories': '{count} repositories',
     'metrics.stars': 'Stars', 'metrics.forks': 'Forks', 'metrics.commitsYear': 'Commits this year', 'metrics.commitsFallback': 'Commits*', 'metrics.languages': 'Languages',
