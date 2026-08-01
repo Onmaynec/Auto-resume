@@ -11,12 +11,12 @@ const updateModule = read('js/update.mjs');
 const updateCss = read('update.css');
 const releaseWorkflow = read('.github/workflows/release.yml');
 
-test('v3.1 version metadata is consistent', () => {
-  assert.equal(packageJson.version, '3.1.0');
-  assert.match(versionModule, /APP_VERSION = '3\.1\.0'/);
-  assert.match(worker, /APP_VERSION = '3\.1\.0'/);
-  assert.match(html, /Auto Resume v3\.1/);
-  assert.match(read('CHANGELOG.md'), /## v3\.1\.0 /);
+test('v3.2 version metadata is consistent', () => {
+  assert.equal(packageJson.version, '3.2.0');
+  assert.match(versionModule, /APP_VERSION = '3\.2\.0'/);
+  assert.match(worker, /APP_VERSION = '3\.2\.0'/);
+  assert.match(html, /Auto Resume v3\.2/);
+  assert.match(read('CHANGELOG.md'), /## v3\.2\.0 /);
 });
 
 test('update UI and browser module are connected safely', () => {
