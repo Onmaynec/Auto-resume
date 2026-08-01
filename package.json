@@ -3,8 +3,16 @@
   "version": "3.2.0",
   "private": true,
   "scripts": {
-    "check": "node --check app.js && node --check sw.js && node --check js/config.js && node --check js/data.js && node --check js/projects.js && node --check js/render.js && node --check js/resume.js && node --check js/utils.js && node --check js/project-selection.mjs && node --check js/resume-text.mjs && node --check js/share.mjs && node --check js/vacancy.mjs && node --check js/preferences.mjs && node --check js/compare.mjs && node --check js/workspace.mjs && node --check js/i18n.mjs && node --check js/docx-export.mjs && node --check js/auth.mjs && node --check js/version.mjs && node --check js/update.mjs && node --check api/_store.js && node --check api/_profile-gateway.js && node --check api/_session-state.js && node --check api/_auth.js && node --check api/auth/start.js && node --check api/auth/callback.js && node --check api/auth/session.js && node --check api/github.js",
+    "check": "node --check app.js && node --check sw.js && node --check js/config.js && node --check js/data.js && node --check js/projects.js && node --check js/render.js && node --check js/resume.js && node --check js/utils.js && node --check js/project-selection.mjs && node --check js/resume-text.mjs && node --check js/share.mjs && node --check js/vacancy.mjs && node --check js/preferences.mjs && node --check js/compare.mjs && node --check js/workspace.mjs && node --check js/i18n.mjs && node --check js/docx-export.mjs && node --check js/auth.mjs && node --check js/version.mjs && node --check js/update.mjs && node --check api/_store.js && node --check api/_profile-gateway.js && node --check api/_session-state.js && node --check api/_auth.js && node --check api/auth/start.js && node --check api/auth/callback.js && node --check api/auth/session.js && node --check api/github.js && node --check scripts/test-server.mjs && node --check playwright.config.mjs && node --check lighthouserc.cjs",
     "test": "node --test",
+    "test:e2e": "playwright test",
+    "test:lighthouse": "lhci autorun --config=lighthouserc.cjs",
+    "test:quality": "npm run test:e2e && npm run test:lighthouse",
     "verify": "npm run check && npm test && git diff --check"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.12.1",
+    "@lhci/cli": "0.15.1",
+    "@playwright/test": "1.61.1"
   }
 }
