@@ -62,7 +62,7 @@ export function normalizeInterviewQuestion(value, index = 0) {
     prompt,
     answer: clean(value.answer, LIMITS.answer),
     rating: clamp(value.rating, 0, 5),
-    completed: Boolean(value.completed || clean(value.answer, LIMITS.answer)),
+    completed: Boolean(value.completed),
   };
 }
 
