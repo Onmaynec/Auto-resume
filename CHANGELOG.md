@@ -1,5 +1,21 @@
 # Changelog
 
+## v3.4.0 — 2026-08-02
+
+- добавлен `CONTRIBUTING.md` с настройкой Node.js 24, архитектурой, командами и правилами pull request;
+- задокументированы naming веток, Conventional Commit-style subjects и release workflow branch → PR → CI → main → cleanup;
+- добавлен `SECURITY.md` с поддерживаемыми версиями и private vulnerability reporting;
+- добавлен Code of Conduct с приватным процессом эскалации чувствительных обращений;
+- добавлены YAML Issue Forms для bug reports и feature requests;
+- blank Issues отключены, security reports направляются в GitHub Security Advisories;
+- добавлен pull request template с checklist тестов, i18n, privacy, accessibility, совместимости, PWA и screenshots;
+- описаны обязательные method allowlist, headers, cookie, CSRF, redaction и rate-limit требования для serverless API;
+- добавлен dependency-free documentation checker структуры Markdown, локальных ссылок и governance contracts;
+- добавлены пять автоматических тестов Issue Forms, policies, PR template, CI и release workflow;
+- CI получил отдельный `documentation` job, а `npm run verify` теперь включает `npm run docs:check`;
+- Service Worker и runtime metadata обновлены для v3.4.0;
+- версия проекта повышена до 3.4.0.
+
 ## v3.3.0 — 2026-08-02
 
 - добавлена versioned presentation schema с template id/version и безопасными миграциями;
