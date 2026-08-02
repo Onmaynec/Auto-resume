@@ -1,5 +1,24 @@
 # Changelog
 
+## v3.8.0 — 2026-08-02
+
+- добавлен полностью локальный Interview Prep Lab с versioned schema;
+- prep sessions связываются с Application Tracker только через application ID, company и role;
+- добавлена детерминированная генерация RU/EN вопросов категорий intro, technical, project, behavioral, gap и candidate;
+- генератор использует только matched skill names, явно указанные навыки, missing skill names и публичные project names;
+- missing skills остаются gap-вопросами и не превращаются в заявления об опыте;
+- добавлены редактируемые ответы, completion state и self-rating 0–5;
+- добавлен локальный банк STAR-историй с situation, task, action и result;
+- readiness score 0–100 объясняется answer coverage, confidence, STAR evidence и interview planning;
+- добавлены versioned JSON import/export и локальный Markdown export;
+- исходный vacancy text, resume content, Application Kit и audit report не входят в prep schema;
+- prep data не входит в workspace backup, public share, API, Redis/KV или analytics;
+- public read-only resumes не показывают Interview Prep panel;
+- engine, UI и CSS добавлены в PWA app shell;
+- старый v3.7 tracker release contract сделан version-agnostic;
+- добавлены unit, privacy contract и Chromium/axe tests;
+- release metadata и Service Worker обновлены до 3.8.0.
+
 ## v3.7.0 — 2026-08-02
 
 - добавлен полностью локальный Application Tracker с versioned schema;
