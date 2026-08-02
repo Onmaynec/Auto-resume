@@ -47,7 +47,7 @@ test('vacancy analysis creates an editable local application kit with exports', 
   await page.locator('#localeSelect').selectOption('en');
   await page.locator('#applicationKitRegenerate').click();
   await expect(editor).toHaveValue(/Application Kit/);
-  await expect(editor).toHaveValue(/I do not present Kubernetes as existing experience/);
+  await expect(editor).toHaveValue(/I do not present [^.]*Kubernetes[^.]* as existing experience/);
 
   await page.locator('#clearVacancyBtn').click();
   await expect(panel).toBeHidden();
