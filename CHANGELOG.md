@@ -1,5 +1,21 @@
 # Changelog
 
+## v3.5.0 — 2026-08-02
+
+- существующий локальный анализ вакансии расширен до редактируемого Application Kit;
+- добавлена versioned application-kit schema с безопасной нормализацией строк, списков и числовых диапазонов;
+- генерируются RU/EN сопроводительные письма в режимах `concise`, `balanced` и `detailed`;
+- письмо использует только подтверждённые навыки и публичные metadata релевантных репозиториев;
+- отсутствующие требования формулируются как gap plan и вопросы для интервью, а не как имеющийся опыт;
+- добавлены evidence prompts с HTTPS-only ссылками на проекты;
+- Application Kit можно редактировать, копировать и локально экспортировать в Markdown или TXT;
+- исходный текст вакансии не входит в generated schema, drafts, backup, public URL, storage или API requests;
+- UI-модуль не использует `fetch`, `localStorage` или `sessionStorage`;
+- Application Kit, UI и CSS добавлены в offline PWA app shell;
+- добавлены unit, integration и Chromium tests генерации, приватности, clipboard и exports;
+- runtime metadata и Service Worker обновлены для v3.5.0;
+- версия проекта повышена до 3.5.0.
+
 ## v3.4.0 — 2026-08-02
 
 - добавлен `CONTRIBUTING.md` с настройкой Node.js 24, архитектурой, командами и правилами pull request;

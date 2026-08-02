@@ -1,4 +1,4 @@
-export const APP_VERSION = '3.4.0';
+export const APP_VERSION = '3.5.0';
 export const RELEASE_REPOSITORY = 'Onmaynec/Auto-resume';
 export const RELEASE_API_URL = `https://api.github.com/repos/${RELEASE_REPOSITORY}/releases/latest`;
 export const RELEASE_PAGE_URL = `https://github.com/${RELEASE_REPOSITORY}/releases`;
@@ -11,10 +11,13 @@ export function syncVersionMetadata(documentRef = globalThis.document) {
   const title = documentRef.querySelector('meta[property="og:title"]');
   if (title) title.content = `Auto Resume v${minorVersion}`;
   const description = documentRef.querySelector('meta[name="description"]');
-  if (description) description.content = `Auto Resume v${minorVersion} — двуязычный PWA-конструктор GitHub-резюме с безопасными шаблонами.`;
+  if (description) description.content = `Auto Resume v${minorVersion} — локальный Application Kit, GitHub-резюме и безопасные шаблоны.`;
   const brandVersion = documentRef.querySelector('.brand small');
   if (brandVersion) brandVersion.textContent = `v${minorVersion}`;
   return true;
 }
 
-if (typeof document !== 'undefined') syncVersionMetadata(document);
+if (typeof document !== 'undefined') {
+  syncVersionMetadata(document);
+  import('./application-kit-ui.mjs').catch(() => {});
+}

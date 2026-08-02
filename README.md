@@ -1,6 +1,21 @@
-# ✨ Auto Resume v3.4
+# ✨ Auto Resume v3.5
 
-> GitHub-профиль превращается в адаптированное, редактируемое и публичное резюме на русском или английском языке.
+> GitHub-профиль превращается в адаптированное, редактируемое и публичное резюме, а анализ вакансии — в локальный пакет отклика на русском или английском языке.
+
+## 📬 Что нового в v3.5
+
+- после анализа вакансии создаётся редактируемый Application Kit;
+- доступны RU/EN сопроводительное письмо, evidence prompts, gap plan и вопросы для интервью;
+- варианты тона: `concise`, `balanced` и `detailed`;
+- подтверждённые навыки связываются с релевантными публичными репозиториями;
+- отсутствующие требования никогда не выдаются за имеющийся опыт;
+- разрешены только HTTPS-ссылки на проекты;
+- пакет копируется и локально экспортируется в Markdown или TXT;
+- исходный текст вакансии не входит в generated schema, drafts, backup, public URL или API requests;
+- Application Kit работает offline после загрузки PWA app shell;
+- добавлены unit, integration и Chromium privacy/export tests.
+
+Архитектура, схема и privacy boundary описаны в [`docs/APPLICATION_KIT.md`](docs/APPLICATION_KIT.md).
 
 ## 🤝 Что нового в v3.4
 
@@ -59,17 +74,45 @@
 - анализ публичного GitHub-профиля и репозиториев;
 - contribution heatmap и помесячная история языков;
 - локальный анализ вакансии;
+- локальный Application Kit для отклика и подготовки к интервью;
 - сравнение двух профилей;
 - выбор и сортировка проектов;
 - три visual-темы и отдельный ATS renderer;
 - безопасное локальное брендирование резюме;
-- экспорт в DOCX, Markdown, TXT и PDF;
+- экспорт резюме в DOCX, Markdown, TXT и PDF;
+- экспорт Application Kit в Markdown и TXT;
 - публичные ссылки;
 - PWA и offline app shell;
 - безопасное автообновление через GitHub Releases;
 - локальные черновики, автосохранение и JSON backup;
 - светлая, тёмная и системная темы;
 - русский и английский интерфейс.
+
+## 📬 Application Kit
+
+После нажатия «Сопоставить с профилем» приложение использует только структурированный результат существующего vacancy analysis:
+
+```json
+{
+  "schemaVersion": 1,
+  "locale": "ru",
+  "tone": "balanced",
+  "profile": {
+    "name": "Octo Cat",
+    "login": "octocat"
+  },
+  "matchScore": 67,
+  "coverLetter": "...",
+  "evidence": [],
+  "gapPlan": [],
+  "interviewQuestions": [],
+  "privacy": "..."
+}
+```
+
+Текст вакансии не передаётся генератору пакета. UI-модуль не использует `fetch`, `localStorage` или `sessionStorage`. После перезагрузки пакет исчезает, если пользователь не сохранил его локально через Markdown/TXT export.
+
+Режим `concise` ограничивает письмо и количество вопросов, `balanced` подходит для обычного отклика, `detailed` добавляет больше project evidence и тем для технического интервью. Все результаты редактируются перед копированием или скачиванием.
 
 ## 🎛️ Шаблоны и брендирование
 
@@ -99,6 +142,7 @@
 | ATS PDF | Системы подбора персонала | Простой печатный макет с выделяемым текстом |
 | Visual PDF | Презентационная версия | Выбранная visual-тема, брендирование и диаграмма навыков |
 | TXT | Максимально простой текстовый экспорт | UTF-8, локализованные заголовки |
+| Application Kit Markdown/TXT | Отклик и подготовка к интервью | Редактируемый локальный текст без server-side генерации |
 
 DOCX создаётся модулем `js/docx-export.mjs` как стандартный OOXML ZIP-пакет. Файл не зависит от serverless API и создаётся из текущего отредактированного черновика.
 
@@ -116,16 +160,21 @@ js/i18n.mjs
   └─ applyTranslations(document)
 ```
 
+Application Kit содержит собственный компактный RU/EN словарь, но берёт текущую локаль из общего состояния приложения.
+
 ### Добавление новой локали
 
 1. Добавьте код языка в `SUPPORTED_LOCALES`.
 2. Создайте словарь с тем же набором ключей.
 3. Добавьте option в `#localeSelect`.
-4. Запустите `npm run verify`.
+4. Добавьте соответствующие строки Application Kit.
+5. Запустите `npm run verify`.
 
 ## 🔗 Публичные ссылки и черновики
 
 Payload публичной ссылки v4 содержит локаль и совместимую presentation schema. Старые payload v2/v3 открываются через миграцию. Каждый локальный черновик также хранит собственный язык, шаблон и пользовательский текст. JSON backup переносит тему, язык, историю профилей и все черновики.
+
+Application Kit намеренно не входит в workspace draft, backup или public share. Исходный vacancy text также не сериализуется.
 
 ## ☁️ Развёртывание
 
@@ -135,7 +184,7 @@ Payload публичной ссылки v4 содержит локаль и со
 GITHUB_TOKEN=ваш_токен
 ```
 
-Токен используется только serverless-функцией `api/github.js`. Экспорт DOCX/Markdown работает и без этой переменной.
+Токен используется только serverless-функцией `api/github.js`. Экспорт DOCX/Markdown и Application Kit работает и без этой переменной.
 
 ## 🏷️ Версии, GitHub Releases и автообновление
 
@@ -191,24 +240,25 @@ npm run test:e2e
 npm run test:lighthouse
 ```
 
-Проверяются JavaScript-модули, RU/EN словари, ZIP/OOXML-структура DOCX, presentation schema, миграции черновиков и публичных ссылок, renderer contracts, PWA shell, update lifecycle, governance Markdown/links, Issue Forms, browser flows, accessibility и Lighthouse budgets.
+Проверяются JavaScript-модули, RU/EN словари, ZIP/OOXML-структура DOCX, presentation schema, Application Kit schema и exporters, миграции черновиков и публичных ссылок, renderer contracts, PWA shell, update lifecycle, governance Markdown/links, Issue Forms, browser flows, accessibility и Lighthouse budgets.
 
 ## 🤲 Участие и безопасность
 
 Перед изменениями прочитайте [`CONTRIBUTING.md`](CONTRIBUTING.md) и [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md). Обычные дефекты и предложения создаются через структурированные Issue Forms.
 
-Не публикуйте токены, cookies, client secrets, Redis credentials, private repository data или конфиденциальное содержимое резюме. Уязвимости сообщаются только через процесс в [`SECURITY.md`](SECURITY.md).
+Не публикуйте токены, cookies, client secrets, Redis credentials, private repository data, исходный текст закрытой вакансии или конфиденциальное содержимое резюме. Уязвимости сообщаются только через процесс в [`SECURITY.md`](SECURITY.md).
 
 ## 🔐 Приватность
 
 - анализируются только публичные данные GitHub;
-- текст вакансии обрабатывается локально;
+- текст вакансии обрабатывается локально и не входит в Application Kit schema;
+- Application Kit существует только в памяти вкладки до локального export;
 - настройки, язык и черновики находятся в браузере;
 - custom logo остаётся временным object URL текущей вкладки;
-- DOCX, Markdown, TXT и PDF формируются локально;
+- DOCX, Markdown, TXT, PDF и Application Kit exports формируются локально;
 - `/api/*` не кэшируется Service Worker;
 - проверка Releases не передаёт содержимое резюме;
-- публичное резюме хранится в URL-фрагменте пользователя.
+- публичное резюме хранится в URL-фрагменте пользователя и не содержит vacancy text или Application Kit.
 
 ## 📜 Лицензия
 
