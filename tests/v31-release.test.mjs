@@ -10,15 +10,19 @@ const versionModule = read('js/version.mjs');
 const updateModule = read('js/update.mjs');
 const updateCss = read('update.css');
 const releaseWorkflow = read('.github/workflows/release.yml');
+const escapeRegExp = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-test('v3.3 version metadata is consistent', () => {
-  assert.equal(packageJson.version, '3.3.0');
-  assert.match(versionModule, /APP_VERSION = '3\.3\.0'/);
+test('release version metadata is consistent', () => {
+  const version = packageJson.version;
+  const minorVersion = version.split('.').slice(0, 2).join('.');
+  const escapedVersion = escapeRegExp(version);
+  assert.match(version, /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/);
+  assert.match(versionModule, new RegExp(`APP_VERSION = '${escapedVersion}'`));
   assert.match(versionModule, /syncVersionMetadata/);
   assert.match(versionModule, /brandVersion\.textContent/);
-  assert.match(worker, /APP_VERSION = '3\.3\.0'/);
-  assert.match(read('CHANGELOG.md'), /## v3\.3\.0 — 2026-08-02/);
-  assert.match(read('README.md'), /Auto Resume v3\.3/);
+  assert.match(worker, new RegExp(`APP_VERSION = '${escapedVersion}'`));
+  assert.match(read('CHANGELOG.md'), new RegExp(`## v${escapedVersion} `));
+  assert.match(read('README.md'), new RegExp(`Auto Resume v${escapeRegExp(minorVersion)}`));
 });
 
 test('update UI and browser module are connected safely', () => {
