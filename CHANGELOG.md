@@ -1,131 +1,101 @@
 # Changelog
 
+## v3.6.0 — 2026-08-02
+
+- добавлен полностью локальный Resume Quality Audit с versioned schema;
+- итоговый score 0–100 разделён на completeness, evidence, ATS readiness и readability;
+- добавлены проверки headline, контактов, summary, навыков, проектов, HTTPS-ссылок, метрик и action verbs;
+- vacancy matching использует только извлечённые requirement names и не получает исходный vacancy text;
+- добавлены стабильные RU/EN issue codes, severity и объяснимые deductions;
+- audit panel автоматически появляется в редакторе и пересчитывается после пользовательских изменений;
+- отчёт не изменяет резюме автоматически;
+- добавлены clipboard и локальные Markdown/TXT exports;
+- audit report не входит в drafts, backup, public share, API, Redis/KV или analytics;
+- public read-only resumes не показывают audit panel;
+- engine, bootstrap, UI и CSS добавлены в PWA app shell;
+- добавлены unit, privacy contract и Chromium/axe tests;
+- release metadata и Service Worker обновлены до 3.6.0.
+
 ## v3.5.0 — 2026-08-02
 
-- существующий локальный анализ вакансии расширен до редактируемого Application Kit;
-- добавлена versioned application-kit schema с безопасной нормализацией строк, списков и числовых диапазонов;
-- генерируются RU/EN сопроводительные письма в режимах `concise`, `balanced` и `detailed`;
-- письмо использует только подтверждённые навыки и публичные metadata релевантных репозиториев;
-- отсутствующие требования формулируются как gap plan и вопросы для интервью, а не как имеющийся опыт;
-- добавлены evidence prompts с HTTPS-only ссылками на проекты;
-- Application Kit можно редактировать, копировать и локально экспортировать в Markdown или TXT;
-- исходный текст вакансии не входит в generated schema, drafts, backup, public URL, storage или API requests;
-- UI-модуль не использует `fetch`, `localStorage` или `sessionStorage`;
-- Application Kit, UI и CSS добавлены в offline PWA app shell;
-- добавлены unit, integration и Chromium tests генерации, приватности, clipboard и exports;
-- runtime metadata и Service Worker обновлены для v3.5.0;
+- добавлена versioned Application Kit schema с безопасной нормализацией;
+- после vacancy analysis генерируются RU/EN cover letter, evidence prompts, gap plan и interview questions;
+- добавлены варианты тона `concise`, `balanced` и `detailed`;
+- генерация опирается только на matched skills и публичные metadata репозиториев;
+- missing skills не описываются как имеющийся опыт;
+- project links ограничены HTTPS;
+- пакет редактируется, копируется и экспортируется локально в Markdown/TXT;
+- исходный vacancy text не входит в generated schema, drafts, backup, public share, storage или API requests;
+- Application Kit modules и CSS добавлены в PWA app shell;
+- добавлены unit, integration и Chromium privacy/export tests;
 - версия проекта повышена до 3.5.0.
 
 ## v3.4.0 — 2026-08-02
 
-- добавлен `CONTRIBUTING.md` с настройкой Node.js 24, архитектурой, командами и правилами pull request;
-- задокументированы naming веток, Conventional Commit-style subjects и release workflow branch → PR → CI → main → cleanup;
-- добавлен `SECURITY.md` с поддерживаемыми версиями и private vulnerability reporting;
-- добавлен Code of Conduct с приватным процессом эскалации чувствительных обращений;
-- добавлены YAML Issue Forms для bug reports и feature requests;
-- blank Issues отключены, security reports направляются в GitHub Security Advisories;
-- добавлен pull request template с checklist тестов, i18n, privacy, accessibility, совместимости, PWA и screenshots;
-- описаны обязательные method allowlist, headers, cookie, CSRF, redaction и rate-limit требования для serverless API;
-- добавлен dependency-free documentation checker структуры Markdown, локальных ссылок и governance contracts;
-- добавлены пять автоматических тестов Issue Forms, policies, PR template, CI и release workflow;
-- CI получил отдельный `documentation` job, а `npm run verify` теперь включает `npm run docs:check`;
-- Service Worker и runtime metadata обновлены для v3.4.0;
+- добавлены `CONTRIBUTING.md`, `SECURITY.md` и `CODE_OF_CONDUCT.md`;
+- добавлены YAML Issue Forms и pull request template;
+- blank Issues отключены, vulnerability reports направляются в private Security Advisories;
+- добавлен dependency-free documentation checker;
+- CI получил отдельный `documentation` job;
 - версия проекта повышена до 3.4.0.
 
 ## v3.3.0 — 2026-08-02
 
-- добавлена versioned presentation schema с template id/version и безопасными миграциями;
-- Visual и ATS вынесены в независимые renderers с единым sanitized resume model;
-- добавлены встроенные темы `visual-classic`, `visual-studio`, `visual-minimal` и fallback `ats-basic`;
-- редактор получил выбор системного шрифта, плотности, отступов секций и акцентного цвета;
-- добавлена WCAG AA проверка контраста акцента с предупреждением о плохой читаемости;
-- custom logo работает только локально через `URL.createObjectURL()` и не сериализуется;
-- черновики, backup и публичные ссылки v4 сохраняют только allowlisted presentation metadata;
-- старые workspace/public payload и неизвестные template ID безопасно переключаются на fallback;
-- добавлен data-only template catalog без пользовательского JavaScript, HTML и внешнего CSS;
-- добавлены renderer contract, migration, persistence и Chromium template tests;
-- Service Worker и runtime metadata обновлены для v3.3.0;
+- добавлена versioned presentation schema и безопасные миграции;
+- добавлены `visual-classic`, `visual-studio`, `visual-minimal` и `ats-basic`;
+- добавлены font, density, spacing, accent и WCAG contrast check;
+- custom logo остаётся локальным и не сериализуется;
+- добавлены renderer, migration, persistence и Chromium tests;
 - версия проекта повышена до 3.3.0.
 
 ## v3.2.0 — 2026-08-01
 
-- добавлен общий Upstash Redis / Vercel KV REST-адаптер без обязательной npm-зависимости;
-- публичный и authenticated-self кэш разделены независимыми namespace;
-- добавлен распределённый fixed-window rate limiting по HMAC-отпечатку IP или OAuth-сессии;
-- реализованы stale-while-revalidate, локальная дедупликация и distributed lock против cache stampede;
-- при сбое Redis приложение автоматически использует безопасный memory fallback;
-- добавлен опциональный session denylist с TTL без хранения OAuth-токена;
-- добавлены privacy-safe заголовки и метрики HIT/MISS/STALE, backend latency и degraded mode;
-- обновлены environment template, threat model и deployment documentation;
-- добавлены unit и integration тесты Redis REST, TTL, partitioning, rate limits, fallback и denylist;
-- полный набор из 77 автоматических проверок проходит без ошибок;
+- добавлен Upstash Redis / Vercel KV REST adapter;
+- добавлены distributed cache, rate limiting, stale-while-revalidate и memory fallback;
+- добавлен optional session denylist без хранения OAuth token;
 - версия проекта повышена до 3.2.0.
 
 ## v3.1.0 — 2026-08-01
 
-- добавлена фоновая проверка последнего стабильного GitHub Release;
-- добавлено RU/EN уведомление об обновлении с release notes и действиями «Обновить сейчас» / «Позже»;
-- Service Worker загружает новый app shell в фоне и применяет его только после подтверждения пользователя;
-- локальные черновики, настройки, история и OAuth-сессия не очищаются при обновлении;
-- добавлены строгая SemVer-проверка и фильтрация недоверенных release payload/URL;
-- добавлен идемпотентный GitHub Actions workflow: проверка → тег `vX.Y.Z` → GitHub Release;
-- release notes автоматически извлекаются из соответствующей секции `CHANGELOG.md`;
-- workflow поддерживает ручной `workflow_dispatch` и не создаёт дубликаты тегов или релизов;
-- добавлены unit и integration проверки update lifecycle, PWA cache и release workflow;
-- полный набор из 61 автоматической проверки проходит без ошибок;
+- добавлена проверка последнего стабильного GitHub Release;
+- Service Worker применяет update только после подтверждения;
+- добавлен idempotent release workflow для tag и GitHub Release;
 - версия проекта повышена до 3.1.0.
 
 ## v3.0.0 — 2026-08-01
 
-- добавлен GitHub OAuth Authorization Code Flow с PKCE S256 и `state`;
-- запрашивается только `read:user`, без доступа к коду приватных репозиториев;
-- OAuth token хранится только в AES-256-GCM encrypted HttpOnly-cookie;
-- добавлены session status, logout и отзыв GitHub grant;
-- собственная аналитика включает private/internal contributions;
-- authenticated self responses отделены от публичного кэша и используют `no-store`;
-- добавлены threat model, environment template и OAuth security tests;
-- полный набор из 53 автоматических проверок проходит без ошибок;
-- версия пакета обновлена до 3.0.0.
+- добавлен GitHub OAuth Authorization Code Flow + PKCE S256;
+- используется минимальный scope `read:user`;
+- OAuth token хранится в encrypted HttpOnly cookie;
+- private/internal contributions доступны только для собственного профиля;
+- версия проекта повышена до 3.0.0.
 
 ## v2.4.0 — 2026-08-01
 
-- добавлен локальный экспорт в DOCX с настоящим текстовым слоем и кликабельными ссылками;
-- добавлен Markdown-экспорт с YAML metadata и совместимостью с GitHub;
-- DOCX содержит A4-разметку, стили заголовков и core properties документа;
-- оба формата сохраняют пользовательский порядок проектов, отредактированный текст и выбранную локаль;
-- генератор DOCX работает без внешнего сервера и сторонних runtime-зависимостей;
-- добавлены проверки ZIP/OOXML-структуры, Unicode, ссылок, локализации и порядка проектов;
-- PWA shell и документация обновлены, версия пакета повышена до 2.4.0.
+- добавлены локальные DOCX и Markdown exports;
+- DOCX содержит OOXML, Unicode и кликабельные ссылки.
 
 ## v2.3.0 — 2026-08-01
 
-- добавлена полноценная RU/EN локализация без перезагрузки страницы;
-- интерфейсные строки вынесены в единые словари `js/i18n.mjs`;
-- локализованы статусы, ошибки, метрики, подсказки, графики, сравнение профилей и конструктор проектов;
-- ATS/TXT/PDF используют выбранный язык;
-- язык сохраняется в настройках, локальных черновиках и JSON backup;
-- публичная ссылка передаёт язык резюме, а ссылки v2 автоматически открываются на русском;
-- добавлены проверки одинакового набора ключей, fallback-языка и локализованного экспорта;
-- версия пакета обновлена до 2.3.0.
+- добавлена полная RU/EN локализация;
+- локаль сохраняется в preferences, drafts, backup и public share.
 
 ## v2.2.0 — 2026-08-01
 
-- добавлены PWA, offline app shell, локальные черновики, автосохранение и JSON backup;
-- добавлены индикаторы сети и свежести GitHub-данных;
-- Service Worker не кэширует `/api/*` ответы.
+- добавлены PWA, offline app shell, drafts, autosave и JSON backup.
 
 ## v2.1.0 — 2026-08-01
 
-- добавлены сравнение профилей, недавние профили, светлая/тёмная темы и CI.
+- добавлены сравнение профилей, recent profiles, темы и CI.
 
 ## v2.0.0 — 2026-08-01
 
-- добавлены анализ вакансии, история языков и публичные ссылки.
+- добавлены vacancy analysis, language history и public links.
 
 ## v1.1.0 — 2026-08-01
 
-- добавлены выбор проектов, редактирование и ATS-friendly экспорт.
+- добавлены project selection, editing и ATS export.
 
 ## v1.0.0
 
-- первая версия генератора резюме по публичному GitHub-профилю.
+- первая версия генератора резюме по GitHub-профилю.

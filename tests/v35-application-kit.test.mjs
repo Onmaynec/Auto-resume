@@ -10,13 +10,15 @@ const uiModule = read('js/application-kit-ui.mjs');
 const workspace = read('js/workspace.mjs');
 const share = read('js/share.mjs');
 
-test('v3.5 application kit is connected to source checks and offline shell', () => {
-  assert.equal(packageJson.version, '3.5.0');
+test('application kit remains connected to source checks and offline shell', () => {
+  assert.match(packageJson.version, /^\d+\.\d+\.\d+$/);
   assert.match(packageJson.scripts.check, /js\/application-kit\.mjs/);
   assert.match(packageJson.scripts.check, /js\/application-kit-ui\.mjs/);
   assert.match(worker, /application-kit\.css/);
   assert.match(worker, /js\/application-kit\.mjs/);
   assert.match(worker, /js\/application-kit-ui\.mjs/);
+  assert.match(worker, new RegExp(`APP_VERSION = '${packageJson.version.replaceAll('.', '\\.')}';`));
+  assert.match(versionModule, new RegExp(`APP_VERSION = '${packageJson.version.replaceAll('.', '\\.')}';`));
   assert.match(versionModule, /application-kit-ui\.mjs/);
 });
 

@@ -1,14 +1,15 @@
-const APP_VERSION = '3.5.0';
+const APP_VERSION = '3.6.0';
 const SHELL_CACHE = `auto-resume-v${APP_VERSION}-shell-v1`;
 const RUNTIME_CACHE = `auto-resume-v${APP_VERSION}-runtime-v1`;
 const APP_SHELL = [
-  './', './index.html', './styles.css', './v21.css', './v22.css', './auth.css', './update.css', './application-kit.css', './app.js',
+  './', './index.html', './styles.css', './v21.css', './v22.css', './auth.css', './update.css', './application-kit.css', './resume-audit.css', './app.js',
   './manifest.webmanifest', './icons/app-icon.svg',
   './js/config.js', './js/data.js', './js/projects.js', './js/render.js', './js/resume.js',
   './js/utils.js', './js/project-selection.mjs', './js/resume-text.mjs', './js/share.mjs',
   './js/vacancy.mjs', './js/preferences.mjs', './js/compare.mjs', './js/workspace.mjs', './js/i18n.mjs',
   './js/docx-export.mjs', './js/auth.mjs', './js/version.mjs', './js/update.mjs', './js/template-system.mjs',
   './js/application-kit.mjs', './js/application-kit-ui.mjs',
+  './js/resume-audit.mjs', './js/resume-audit-ui.mjs', './js/resume-audit-bootstrap.mjs',
 ];
 
 self.addEventListener('install', (event) => {

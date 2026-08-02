@@ -1,0 +1,174 @@
+.resume-audit {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--border, #314057) 82%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--card, #111827) 88%, transparent);
+}
+
+.resume-audit__heading,
+.resume-audit__heading > div,
+.resume-audit__category > div,
+.resume-audit__actions {
+  display: flex;
+  align-items: center;
+}
+
+.resume-audit__heading {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.resume-audit__heading h3 {
+  margin: .15rem 0 0;
+}
+
+.resume-audit__score {
+  min-width: 78px;
+  padding: .55rem .7rem;
+  border-radius: 14px;
+  text-align: center;
+  background: color-mix(in srgb, var(--accent, #7c5cff) 18%, transparent);
+}
+
+.resume-audit__score strong {
+  font-size: 1.65rem;
+  line-height: 1;
+}
+
+.resume-audit__score span {
+  margin-left: .15rem;
+  font-size: .8rem;
+  opacity: .72;
+}
+
+.resume-audit__grade {
+  margin: .65rem 0 .25rem;
+  font-weight: 750;
+}
+
+.resume-audit__note,
+.resume-audit__issue p {
+  margin: 0;
+  color: var(--muted, #9aa8bd);
+  line-height: 1.45;
+}
+
+.resume-audit__categories {
+  display: grid;
+  gap: .6rem;
+  margin: 1rem 0;
+}
+
+.resume-audit__category > div {
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: .25rem;
+  font-size: .88rem;
+}
+
+.resume-audit__category progress {
+  width: 100%;
+  height: .55rem;
+  accent-color: var(--accent, #7c5cff);
+}
+
+.resume-audit__issues > strong {
+  display: block;
+  margin-bottom: .5rem;
+}
+
+.resume-audit__issues ol {
+  display: grid;
+  gap: .55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.resume-audit__issue {
+  display: grid;
+  grid-template-columns: 10px 1fr;
+  gap: .6rem;
+  padding: .65rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface, #0b1220) 84%, transparent);
+}
+
+.resume-audit__severity {
+  width: 8px;
+  height: 8px;
+  margin-top: .38rem;
+  border-radius: 999px;
+  background: #8ea0ba;
+}
+
+.resume-audit__issue[data-severity="critical"] .resume-audit__severity {
+  background: #ff6b7a;
+}
+
+.resume-audit__issue[data-severity="warning"] .resume-audit__severity {
+  background: #ffb84d;
+}
+
+.resume-audit__issue[data-severity="info"] .resume-audit__severity {
+  background: #4da3ff;
+}
+
+.resume-audit__issue code {
+  display: inline-block;
+  margin-top: .3rem;
+  font-size: .72rem;
+  opacity: .7;
+}
+
+.resume-audit__empty {
+  padding: .65rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent, #7c5cff) 10%, transparent);
+}
+
+.resume-audit__actions {
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-top: .85rem;
+}
+
+.resume-audit__actions .btn {
+  flex: 1 1 145px;
+}
+
+.resume-audit__privacy,
+.resume-audit__status {
+  display: block;
+  margin-top: .6rem;
+  color: var(--muted, #9aa8bd);
+}
+
+.resume-audit__status:not(:empty) {
+  color: var(--accent, #7c5cff);
+  font-weight: 700;
+}
+
+@media (max-width: 720px) {
+  .resume-audit {
+    padding: .85rem;
+  }
+
+  .resume-audit__heading {
+    align-items: flex-start;
+  }
+
+  .resume-audit__score {
+    min-width: 68px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resume-audit *,
+  .resume-audit *::before,
+  .resume-audit *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
