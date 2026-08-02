@@ -1,5 +1,20 @@
 # Changelog
 
+## v3.3.0 — 2026-08-02
+
+- добавлена versioned presentation schema с template id/version и безопасными миграциями;
+- Visual и ATS вынесены в независимые renderers с единым sanitized resume model;
+- добавлены встроенные темы `visual-classic`, `visual-studio`, `visual-minimal` и fallback `ats-basic`;
+- редактор получил выбор системного шрифта, плотности, отступов секций и акцентного цвета;
+- добавлена WCAG AA проверка контраста акцента с предупреждением о плохой читаемости;
+- custom logo работает только локально через `URL.createObjectURL()` и не сериализуется;
+- черновики, backup и публичные ссылки v4 сохраняют только allowlisted presentation metadata;
+- старые workspace/public payload и неизвестные template ID безопасно переключаются на fallback;
+- добавлен data-only template catalog без пользовательского JavaScript, HTML и внешнего CSS;
+- добавлены renderer contract, migration, persistence и Chromium template tests;
+- Service Worker и runtime metadata обновлены для v3.3.0;
+- версия проекта повышена до 3.3.0.
+
 ## v3.2.0 — 2026-08-01
 
 - добавлен общий Upstash Redis / Vercel KV REST-адаптер без обязательной npm-зависимости;
