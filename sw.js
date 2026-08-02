@@ -11,7 +11,7 @@ const APP_SHELL = [
   './js/application-kit.mjs', './js/application-kit-ui.mjs',
   './js/resume-audit.mjs', './js/resume-audit-ui.mjs', './js/resume-audit-bootstrap.mjs',
   './js/application-tracker.mjs', './js/application-tracker-ui.mjs',
-  './js/interview-prep.mjs', './js/interview-prep-ui.mjs',
+  './js/interview-prep.mjs', './js/interview-prep-ui.mjs', './js/interview-prep-sync.mjs',
 ];
 
 self.addEventListener('install', (event) => {
