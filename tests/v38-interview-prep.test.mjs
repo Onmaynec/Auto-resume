@@ -27,7 +27,9 @@ test('prep data has its own local schema and stays outside public payloads and A
   assert.doesNotMatch(`${engine}\n${ui}`, /state\.resumeDraft|vacancyText|applicationKit|auditReport/);
   assert.match(ui, /application: application \? \{ id: application\.id, company: application\.company, role: application\.role \} : null/);
   assert.match(sync, /#applicationTrackerPanel/);
-  assert.match(sync, /StorageEvent/);
+  assert.match(sync, /#interviewPrepApplication/);
+  assert.match(sync, /TRACKER_KEY/);
+  assert.doesNotMatch(sync, /StorageEvent|dispatchEvent/);
 });
 
 test('interview prep UI is localized, accessible and exportable', async () => {
