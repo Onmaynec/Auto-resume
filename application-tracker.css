@@ -1,0 +1,143 @@
+.application-tracker {
+  margin-top: 1rem;
+  padding: 1.25rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.application-tracker__heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.9fr);
+  gap: 1rem;
+  align-items: end;
+}
+
+.application-tracker__heading h2,
+.application-tracker__heading p { margin: 0; }
+.application-tracker__heading p { color: var(--muted); line-height: 1.55; }
+
+.application-tracker__stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: .7rem;
+}
+
+.application-tracker__stats > div {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: .85rem;
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  display: grid;
+  gap: .2rem;
+}
+
+.application-tracker__stats strong { font-size: 1.45rem; }
+.application-tracker__stats span { color: var(--muted); font-size: .82rem; }
+
+.application-tracker__form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .8rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+}
+
+.application-tracker__form label {
+  display: grid;
+  gap: .38rem;
+  color: var(--muted);
+  font-size: .86rem;
+  font-weight: 600;
+}
+
+.application-tracker__form input,
+.application-tracker__form select,
+.application-tracker__form textarea,
+.application-tracker__toolbar input,
+.application-tracker__toolbar select,
+.application-tracker__card select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--text);
+  padding: .72rem .78rem;
+  font: inherit;
+}
+
+.application-tracker__form textarea { resize: vertical; min-height: 84px; }
+.application-tracker__wide { grid-column: 1 / -1; }
+.application-tracker__form-actions { display: flex; gap: .65rem; flex-wrap: wrap; }
+
+.application-tracker__toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) repeat(2, minmax(150px, .7fr)) repeat(3, auto);
+  gap: .65rem;
+  align-items: center;
+}
+
+.application-tracker__message { min-height: 1.2em; margin: 0; color: var(--muted); }
+.application-tracker__message[data-tone="success"] { color: var(--success, #29d3a2); }
+.application-tracker__message[data-tone="error"] { color: var(--danger, #ff6b7a); }
+
+.application-tracker__list { display: grid; gap: .75rem; }
+.application-tracker__card {
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--border);
+  border-radius: 16px;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  display: grid;
+  gap: .75rem;
+}
+.application-tracker__card[data-follow-up-state="overdue"] { border-left-color: var(--danger, #ff6b7a); }
+.application-tracker__card[data-follow-up-state="due-soon"] { border-left-color: var(--warning, #ffb84d); }
+.application-tracker__card[data-follow-up-state="scheduled"] { border-left-color: var(--accent, #7c5cff); }
+
+.application-tracker__card-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.application-tracker__card-head > div { display: grid; gap: .15rem; min-width: 0; }
+.application-tracker__card-head strong { font-size: 1.05rem; overflow-wrap: anywhere; }
+.application-tracker__card-head span { color: var(--muted); overflow-wrap: anywhere; }
+.application-tracker__card-head select { width: min(190px, 42vw); }
+
+.application-tracker__meta { display: flex; flex-wrap: wrap; gap: .45rem .9rem; color: var(--muted); font-size: .85rem; }
+.application-tracker__meta span { overflow-wrap: anywhere; }
+.application-tracker__card p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
+.application-tracker__card-actions { display: flex; flex-wrap: wrap; gap: .8rem; align-items: center; }
+.application-tracker__empty { margin: 0; padding: 1.2rem; border: 1px dashed var(--border); border-radius: 14px; color: var(--muted); text-align: center; }
+
+@media (max-width: 980px) {
+  .application-tracker__heading { grid-template-columns: 1fr; align-items: start; }
+  .application-tracker__stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .application-tracker__form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .application-tracker__toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .application-tracker { padding: 1rem; }
+  .application-tracker__stats,
+  .application-tracker__form,
+  .application-tracker__toolbar { grid-template-columns: 1fr; }
+  .application-tracker__wide { grid-column: auto; }
+  .application-tracker__card-head { align-items: stretch; flex-direction: column; }
+  .application-tracker__card-head select { width: 100%; }
+}
+
+@media print {
+  .application-tracker { display: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .application-tracker *, .application-tracker *::before, .application-tracker *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}

@@ -1,21 +1,35 @@
-# ✨ Auto Resume v3.6
+# ✨ Auto Resume v3.7
 
-> GitHub-профиль превращается в адаптированное резюме, локальный пакет отклика и объяснимый ATS-аудит на русском или английском языке.
+> GitHub-профиль превращается в адаптированное резюме, локальный пакет отклика, объяснимый ATS-аудит и приватную воронку откликов на русском или английском языке.
+
+## 🗂️ Что нового в v3.7
+
+- добавлен полностью локальный **Application Tracker** рядом с workspace;
+- записи содержат компанию, роль, HTTPS-ссылку, статус, дату отклика, follow-up, заметки и optional draft reference;
+- доступны этапы `saved`, `applied`, `screening`, `interview`, `offer`, `rejected` и `withdrawn`;
+- просроченные и ближайшие follow-up автоматически поднимаются вверх;
+- есть поиск, фильтры, статистика и быстрое изменение статуса;
+- связь с резюме хранит только ID и название черновика, а не его содержимое;
+- поддерживаются versioned JSON import/export и защищённый CSV export;
+- tracker data не входит в public share, workspace backup, API, Redis/KV или analytics;
+- public read-only resume не показывает tracker panel;
+- engine, UI и CSS входят в offline PWA app shell;
+- добавлены unit, privacy contract и Chromium/axe tests.
+
+Схема, import/export и privacy boundary описаны в [`docs/APPLICATION_TRACKER.md`](docs/APPLICATION_TRACKER.md).
 
 ## 🔎 Что нового в v3.6
 
 - после генерации резюме появляется локальная панель **Resume Quality Audit**;
-- итоговый score 0–100 объясняется четырьмя категориями: completeness, evidence, ATS readiness и readability;
+- итоговый score 0–100 объясняется категориями completeness, evidence, ATS readiness и readability;
 - проверяются headline, контакты, summary, навыки, проекты, HTTPS-ссылки, метрики, глаголы действия и повторяемость;
 - vacancy matching использует только извлечённые названия требований, а не исходный текст вакансии;
-- стабильные issue codes позволяют понимать причину каждого deduction;
+- стабильные issue codes объясняют каждый deduction;
 - отчёт пересчитывается после редактирования, но никогда не изменяет резюме автоматически;
 - отчёт копируется и локально экспортируется в Markdown/TXT;
-- audit report не входит в drafts, backup, public share, API или analytics;
-- engine, UI и CSS входят в offline PWA app shell;
-- добавлены unit, privacy contract и Chromium/axe tests.
+- audit report не входит в drafts, backup, public share, API или analytics.
 
-Архитектура, scoring model и privacy boundary описаны в [`docs/RESUME_AUDIT.md`](docs/RESUME_AUDIT.md).
+Подробности: [`docs/RESUME_AUDIT.md`](docs/RESUME_AUDIT.md).
 
 ## 📬 Что нового в v3.5
 
@@ -36,6 +50,7 @@
 - локальный анализ требований вакансии;
 - локальный Application Kit;
 - локальный Resume Quality Audit;
+- локальный Application Tracker;
 - сравнение GitHub-профилей;
 - выбор и сортировка проектов;
 - редактируемые RU/EN резюме;
@@ -46,6 +61,38 @@
 - PWA, offline app shell и безопасное автообновление;
 - локальные drafts, autosave и JSON backup;
 - light, dark и system themes.
+
+## 🗂️ Application Tracker
+
+Tracker использует отдельный versioned storage key:
+
+```text
+auto-resume:application-tracker:v1
+```
+
+Запись содержит только allowlisted поля:
+
+```json
+{
+  "company": "Acme",
+  "role": "Frontend Developer",
+  "vacancyUrl": "https://jobs.example.com/frontend",
+  "status": "applied",
+  "appliedDate": "2026-08-01",
+  "followUpDate": "2026-08-04",
+  "notes": "Send portfolio link.",
+  "draft": {
+    "id": "octocat-1785663600000",
+    "name": "Frontend Developer — Acme"
+  }
+}
+```
+
+Черновик связан ссылкой по ID и имени. Resume content, presentation metadata, Application Kit, audit report и исходный vacancy text в запись не копируются.
+
+Follow-up сортируются в порядке: overdue → ближайшие три дня → позднее → без даты. Terminal statuses не считаются просроченными.
+
+JSON import нормализует данные и объединяет duplicate IDs по наиболее новому `updatedAt`. CSV export защищён от spreadsheet formula injection.
 
 ## 🔎 Resume Quality Audit
 
@@ -74,8 +121,6 @@ Audit engine получает только текущий resume draft, лока
 ```
 
 Проверка является объяснимой эвристикой, а не гарантией прохождения конкретной ATS. Она не придумывает достижения, не переписывает текст и не утверждает наличие отсутствующих навыков.
-
-Отчёт существует только в памяти вкладки. Пользователь может скопировать его или скачать локальный Markdown/TXT.
 
 ## 📬 Application Kit
 
@@ -121,21 +166,17 @@ Presentation schema отделена от контента резюме:
 | Visual PDF | Презентационная версия | Выбранная visual-тема |
 | Application Kit Markdown/TXT | Отклик и интервью | Локальный редактируемый текст |
 | Audit Markdown/TXT | Проверка перед отправкой | Score, категории и issue codes |
+| Tracker JSON/CSV | Перенос и анализ воронки | Versioned import и CSV injection protection |
 
 ## 🔗 Черновики и публичные ссылки
 
 Workspace хранит локаль, безопасную presentation schema и редактируемый resume draft. JSON backup переносит drafts, preferences и историю профилей.
 
-Application Kit и Resume Quality Audit намеренно не входят в:
+Application Kit и Resume Quality Audit намеренно не входят в workspace, backup, public share payload, serverless API, Redis/KV или analytics.
 
-- workspace;
-- backup;
-- public share payload;
-- serverless API;
-- Redis/KV;
-- analytics.
+Application Tracker хранится отдельно. Его dedicated JSON export нужно сохранить перед очисткой site data или переносом на другое устройство.
 
-Public resume payload остаётся read-only и не показывает audit panel.
+Public resume payload остаётся read-only и не показывает audit или tracker panels.
 
 ## 🔐 OAuth и API
 
@@ -159,7 +200,7 @@ UPSTASH_REDIS_REST_TOKEN=…
 RATE_LIMIT_SECRET=случайная_строка
 ```
 
-Поддерживаются `KV_REST_API_URL` и `KV_REST_API_TOKEN`. Без переменных используется memory fallback. OAuth tokens, vacancy text и resume content в Redis не записываются.
+Поддерживаются `KV_REST_API_URL` и `KV_REST_API_TOKEN`. Без переменных используется memory fallback. OAuth tokens, vacancy text, resume content и tracker data в Redis не записываются.
 
 ## ☁️ Развёртывание
 
@@ -180,12 +221,7 @@ SESSION_SECRET=случайная_строка_не_короче_32_символ
 
 ## 🏷️ Релизы и автообновление
 
-Версия синхронизируется между:
-
-- `package.json`;
-- `js/version.mjs`;
-- `sw.js`;
-- `CHANGELOG.md`.
+Версия синхронизируется между `package.json`, `js/version.mjs`, `sw.js` и `CHANGELOG.md`.
 
 После merge в `main` workflow `.github/workflows/release.yml` запускает verification, проверяет SemVer, создаёт тег `vX.Y.Z` и публикует GitHub Release. PWA загружает новый app shell в фоне и применяет его только после подтверждения пользователя.
 
@@ -210,7 +246,7 @@ npm run test:lighthouse
 npm run verify
 ```
 
-Проверяются source syntax, RU/EN contracts, OAuth, Redis/KV, exports, PWA lifecycle, templates, Application Kit, Resume Quality Audit, privacy boundaries, Chromium/axe и Lighthouse budgets.
+Проверяются source syntax, RU/EN contracts, OAuth, Redis/KV, exports, PWA lifecycle, templates, Application Kit, Resume Quality Audit, Application Tracker, privacy boundaries, Chromium/axe и Lighthouse budgets.
 
 ## 🤝 Участие и безопасность
 
@@ -226,12 +262,12 @@ npm run verify
 
 - GitHub profile analysis использует разрешённые публичные данные;
 - vacancy text обрабатывается локально;
-- drafts и preferences находятся в браузере;
+- drafts, preferences и tracker находятся в браузере;
 - custom logo не загружается;
 - Application Kit и audit report живут в памяти вкладки;
 - exports создаются локально;
 - public resume хранится в URL fragment;
-- serverless API не получает содержимое резюме или вакансии.
+- serverless API не получает содержимое резюме, вакансии или tracker records.
 
 ## 📜 Лицензия
 

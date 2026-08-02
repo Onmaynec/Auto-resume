@@ -1,5 +1,22 @@
 # Changelog
 
+## v3.7.0 — 2026-08-02
+
+- добавлен полностью локальный Application Tracker с versioned schema;
+- записи содержат company, role, HTTPS vacancy URL, status, applied date, follow-up date, notes и optional draft reference;
+- добавлены этапы `saved`, `applied`, `screening`, `interview`, `offer`, `rejected` и `withdrawn`;
+- overdue и due-soon follow-up получают приоритетную сортировку;
+- добавлены поиск, status/follow-up filters и локальная статистика;
+- связь с резюме хранит только draft ID и name без содержимого resume draft;
+- добавлены CRUD, быстрое изменение статуса и безопасное удаление;
+- добавлены versioned JSON export/import и CSV export с formula-injection protection;
+- tracker data не входит в workspace backup, public share, API, Redis/KV или analytics;
+- public read-only resumes не показывают tracker panel;
+- engine, UI и CSS добавлены в PWA app shell;
+- старый v3.6 release contract сделан version-agnostic;
+- добавлены unit, privacy contract и Chromium/axe tests;
+- release metadata и Service Worker обновлены до 3.7.0.
+
 ## v3.6.0 — 2026-08-02
 
 - добавлен полностью локальный Resume Quality Audit с versioned schema;
