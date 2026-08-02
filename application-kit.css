@@ -1,0 +1,76 @@
+.application-kit {
+  margin-top: 1.25rem;
+  padding: 1.25rem;
+  border: 1px solid color-mix(in srgb, var(--accent, #7c5cff) 38%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface, #111722) 88%, transparent);
+}
+.application-kit.hidden { display: none; }
+.application-kit__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.application-kit__heading h3 { margin: .2rem 0 0; font-size: 1.35rem; }
+.application-kit__local {
+  padding: .35rem .55rem;
+  border-radius: 999px;
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  background: rgba(41, 211, 162, .12);
+  color: #29d3a2;
+}
+.application-kit__privacy {
+  margin: .75rem 0 1rem;
+  padding: .75rem .9rem;
+  border-left: 3px solid #29d3a2;
+  border-radius: 8px;
+  background: rgba(41, 211, 162, .08);
+  font-size: .9rem;
+}
+.application-kit__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: .65rem;
+  margin-bottom: .85rem;
+}
+.application-kit__toolbar label {
+  display: grid;
+  gap: .35rem;
+  min-width: 190px;
+  font-size: .82rem;
+  font-weight: 700;
+}
+.application-kit__toolbar select,
+.application-kit__editor {
+  width: 100%;
+  border: 1px solid rgba(143, 155, 173, .32);
+  border-radius: 12px;
+  background: var(--surface-strong, #0d121b);
+  color: inherit;
+}
+.application-kit__toolbar select { min-height: 42px; padding: .55rem .7rem; }
+.application-kit__editor-label { display: block; margin-bottom: .4rem; font-weight: 700; }
+.application-kit__editor {
+  min-height: 420px;
+  padding: 1rem;
+  resize: vertical;
+  font: 500 .92rem/1.55 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.application-kit__editor:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent, #7c5cff) 45%, transparent);
+  outline-offset: 2px;
+}
+.application-kit__status { min-height: 1.25rem; margin: .65rem 0 0; font-size: .85rem; color: var(--muted, #8f9bad); }
+@media (max-width: 720px) {
+  .application-kit { padding: 1rem; }
+  .application-kit__toolbar > * { width: 100%; }
+  .application-kit__toolbar label { min-width: 100%; }
+  .application-kit__editor { min-height: 360px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .application-kit *, .application-kit *::before, .application-kit *::after { scroll-behavior: auto !important; }
+}
