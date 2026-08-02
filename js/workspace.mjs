@@ -1,16 +1,63 @@
 import { normalizeLocale } from './i18n.mjs';
-export const WORKSPACE_VERSION = 1; export const WORKSPACE_KEY = 'auto-resume:workspace:v1'; export const PROFILE_CACHE_PREFIX = 'auto-resume:v2:'; const MAX_DRAFTS = 30;
+import { normalizePresentation, presentationMode } from './template-system.mjs';
+
+export const WORKSPACE_VERSION = 2;
+export const WORKSPACE_KEY = 'auto-resume:workspace:v1';
+export const PROFILE_CACHE_PREFIX = 'auto-resume:v3:';
+const MAX_DRAFTS = 30;
+
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
 function codedError(code) { const error = new Error(code); error.code = code; return error; }
-export function normalizeWorkspace(value) { const source = value && typeof value === 'object' ? value : {}; const drafts = Array.isArray(source.drafts) ? source.drafts.map(normalizeDraft).filter(Boolean).slice(0, MAX_DRAFTS) : []; return { version: WORKSPACE_VERSION, drafts, updatedAt: typeof source.updatedAt === 'string' ? source.updatedAt : null }; }
-export function normalizeDraft(value) {
-  if (!value || typeof value !== 'object' || !value.draft || typeof value.draft !== 'object') return null; const id = String(value.id || '').trim(); if (!id) return null;
-  const savedAt = isValidDate(value.savedAt) ? value.savedAt : new Date(0).toISOString();
-  return { id, name: String(value.name || 'Untitled').trim().slice(0, 120) || 'Untitled', savedAt, template: value.template === 'ats' ? 'ats' : 'visual', locale: normalizeLocale(value.locale || value.draft?.locale), user: value.user && typeof value.user === 'object' ? clone(value.user) : {}, draft: clone(value.draft) };
+
+export function normalizeWorkspace(value) {
+  const source = value && typeof value === 'object' ? value : {};
+  const drafts = Array.isArray(source.drafts) ? source.drafts.map(normalizeDraft).filter(Boolean).slice(0, MAX_DRAFTS) : [];
+  return { version: WORKSPACE_VERSION, drafts, updatedAt: typeof source.updatedAt === 'string' ? source.updatedAt : null };
 }
-export function createDraftRecord({ id, name, user, draft, template = 'visual', locale = 'ru', savedAt = new Date().toISOString() }) { if (!draft || typeof draft !== 'object') throw new TypeError('Draft data is required.'); const login = String(user?.login || user?.name || 'resume').toLowerCase().replace(/[^a-z0-9-]+/g, '-'); const generatedId = `${login || 'resume'}-${Date.parse(savedAt) || Date.now()}`; return normalizeDraft({ id: id || generatedId, name: name || `Resume @${user?.login || user?.name || 'developer'}`, user, draft, template, locale, savedAt }); }
-export function upsertDraft(drafts, record) { const normalized = normalizeDraft(record); if (!normalized) throw new TypeError('Invalid draft record.'); const list = Array.isArray(drafts) ? drafts.map(normalizeDraft).filter(Boolean) : []; return [normalized, ...list.filter((item) => item.id !== normalized.id)].sort((left, right) => Date.parse(right.savedAt) - Date.parse(left.savedAt)).slice(0, MAX_DRAFTS); }
-export function renameDraft(drafts, id, name, savedAt = new Date().toISOString()) { const nextName = String(name || '').trim().slice(0, 120); if (!nextName) return Array.isArray(drafts) ? drafts : []; return (Array.isArray(drafts) ? drafts : []).map((item) => { const normalized = normalizeDraft(item); return normalized?.id === id ? { ...normalized, name: nextName, savedAt } : normalized; }).filter(Boolean); }
+
+export function normalizeDraft(value) {
+  if (!value || typeof value !== 'object' || !value.draft || typeof value.draft !== 'object') return null;
+  const id = String(value.id || '').trim();
+  if (!id) return null;
+  const savedAt = isValidDate(value.savedAt) ? value.savedAt : new Date(0).toISOString();
+  const legacyMode = value.template === 'ats' ? 'ats' : 'visual';
+  const draft = clone(value.draft);
+  draft.presentation = normalizePresentation(draft.presentation, { mode: legacyMode });
+  const template = presentationMode(draft.presentation);
+  return {
+    id,
+    name: String(value.name || 'Untitled').trim().slice(0, 120) || 'Untitled',
+    savedAt,
+    template,
+    locale: normalizeLocale(value.locale || draft.locale),
+    user: value.user && typeof value.user === 'object' ? clone(value.user) : {},
+    draft,
+  };
+}
+
+export function createDraftRecord({ id, name, user, draft, template = 'visual', locale = 'ru', savedAt = new Date().toISOString() }) {
+  if (!draft || typeof draft !== 'object') throw new TypeError('Draft data is required.');
+  const login = String(user?.login || user?.name || 'resume').toLowerCase().replace(/[^a-z0-9-]+/g, '-');
+  const generatedId = `${login || 'resume'}-${Date.parse(savedAt) || Date.now()}`;
+  return normalizeDraft({ id: id || generatedId, name: name || `Resume @${user?.login || user?.name || 'developer'}`, user, draft, template, locale, savedAt });
+}
+
+export function upsertDraft(drafts, record) {
+  const normalized = normalizeDraft(record);
+  if (!normalized) throw new TypeError('Invalid draft record.');
+  const list = Array.isArray(drafts) ? drafts.map(normalizeDraft).filter(Boolean) : [];
+  return [normalized, ...list.filter((item) => item.id !== normalized.id)].sort((left, right) => Date.parse(right.savedAt) - Date.parse(left.savedAt)).slice(0, MAX_DRAFTS);
+}
+
+export function renameDraft(drafts, id, name, savedAt = new Date().toISOString()) {
+  const nextName = String(name || '').trim().slice(0, 120);
+  if (!nextName) return Array.isArray(drafts) ? drafts : [];
+  return (Array.isArray(drafts) ? drafts : []).map((item) => {
+    const normalized = normalizeDraft(item);
+    return normalized?.id === id ? { ...normalized, name: nextName, savedAt } : normalized;
+  }).filter(Boolean);
+}
+
 export function removeDraft(drafts, id) { return (Array.isArray(drafts) ? drafts : []).map(normalizeDraft).filter((item) => item && item.id !== id); }
 export function readWorkspace(storage) { try { const raw = storage?.getItem?.(WORKSPACE_KEY); return raw ? normalizeWorkspace(JSON.parse(raw)) : normalizeWorkspace(null); } catch { return normalizeWorkspace(null); } }
 export function writeWorkspace(storage, workspace) { const normalized = normalizeWorkspace({ ...workspace, updatedAt: new Date().toISOString() }); storage?.setItem?.(WORKSPACE_KEY, JSON.stringify(normalized)); return normalized; }
