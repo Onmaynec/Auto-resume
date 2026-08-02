@@ -1,6 +1,20 @@
-# ✨ Auto Resume v3.2
+# ✨ Auto Resume v3.3
 
 > GitHub-профиль превращается в адаптированное, редактируемое и публичное резюме на русском или английском языке.
+
+## 🎨 Что нового в v3.3
+
+- versioned presentation schema с безопасным fallback для старых черновиков и публичных ссылок;
+- независимые renderers для `visual-classic`, `visual-studio`, `visual-minimal` и `ats-basic`;
+- настройка системного шрифта, плотности, отступов секций и акцентного цвета;
+- автоматическая проверка контраста акцента по WCAG AA;
+- локальный custom logo через `URL.createObjectURL()` без загрузки на сервер;
+- логотип не попадает в черновики, backup или публичную ссылку;
+- data-only template catalog без пользовательского JavaScript, HTML и внешнего CSS;
+- миграция старых workspace/public payload и безопасный fallback неизвестных template ID;
+- browser contract-тесты всех встроенных тем и сохранения presentation metadata.
+
+Подробная схема и правила расширения описаны в [`docs/TEMPLATES.md`](docs/TEMPLATES.md).
 
 ## 🗄️ Что нового в v3.2
 
@@ -29,14 +43,6 @@
 - отдельный cache partition и `no-store` для authenticated self analytics;
 - гостевой режим, публичные ссылки, PWA и локальные черновики продолжают работать без OAuth.
 
-## 🆕 Что нового
-
-- 📝 **DOCX с настоящим текстовым слоем**: документ открывается для дальнейшего редактирования в Word и LibreOffice.
-- 📋 **Markdown-экспорт**: готовый `.md` с локализованными секциями, ссылками и YAML metadata.
-- 🔗 **Кликабельные ссылки в DOCX** и сохранение пользовательского порядка проектов.
-- 🌍 DOCX и Markdown соответствуют выбранному языку RU/EN.
-- 🔒 Экспорт выполняется полностью в браузере без отправки резюме на сервер и без внешних runtime-зависимостей.
-
 ## 🚀 Возможности
 
 - анализ публичного GitHub-профиля и репозиториев;
@@ -44,7 +50,8 @@
 - локальный анализ вакансии;
 - сравнение двух профилей;
 - выбор и сортировка проектов;
-- Visual и ATS-шаблоны;
+- три visual-темы и отдельный ATS renderer;
+- безопасное локальное брендирование резюме;
 - экспорт в DOCX, Markdown, TXT и PDF;
 - публичные ссылки;
 - PWA и offline app shell;
@@ -53,6 +60,25 @@
 - светлая, тёмная и системная темы;
 - русский и английский интерфейс.
 
+## 🎛️ Шаблоны и брендирование
+
+Контент резюме и presentation schema разделены. DOCX, Markdown и TXT не зависят от visual-темы. Черновик и публичная ссылка сохраняют только allowlisted поля:
+
+```json
+{
+  "schemaVersion": 1,
+  "templateId": "visual-studio",
+  "templateVersion": 1,
+  "visualTemplateId": "visual-studio",
+  "accent": "#0f766e",
+  "font": "inter",
+  "density": "comfortable",
+  "spacing": "normal"
+}
+```
+
+Неизвестный или слишком новый template ID автоматически заменяется на `visual-classic` или `ats-basic`. Пользовательский логотип живёт только как временный `blob:` URL в текущей вкладке и никогда не сериализуется.
+
 ## 📦 Форматы экспорта
 
 | Формат | Назначение | Особенности |
@@ -60,7 +86,7 @@
 | DOCX | Редактирование и отправка рекрутеру | Настоящий текст, A4, стили заголовков, кликабельные ссылки, metadata |
 | Markdown | GitHub, портфолио и ручное редактирование | YAML metadata, читаемые секции и ссылки |
 | ATS PDF | Системы подбора персонала | Простой печатный макет с выделяемым текстом |
-| Visual PDF | Презентационная версия | Визуальный макет с диаграммой навыков |
+| Visual PDF | Презентационная версия | Выбранная visual-тема, брендирование и диаграмма навыков |
 | TXT | Максимально простой текстовый экспорт | UTF-8, локализованные заголовки |
 
 DOCX создаётся модулем `js/docx-export.mjs` как стандартный OOXML ZIP-пакет. Файл не зависит от serverless API и создаётся из текущего отредактированного черновика.
@@ -88,7 +114,7 @@ js/i18n.mjs
 
 ## 🔗 Публичные ссылки и черновики
 
-Payload публичной ссылки содержит локаль. Каждый локальный черновик также хранит собственный язык, шаблон и пользовательский текст. JSON backup переносит тему, язык, историю профилей и все черновики.
+Payload публичной ссылки v4 содержит локаль и совместимую presentation schema. Старые payload v2/v3 открываются через миграцию. Каждый локальный черновик также хранит собственный язык, шаблон и пользовательский текст. JSON backup переносит тему, язык, историю профилей и все черновики.
 
 ## ☁️ Развёртывание
 
@@ -102,7 +128,7 @@ GITHUB_TOKEN=ваш_токен
 
 ## 🏷️ Версии, GitHub Releases и автообновление
 
-Версия задаётся в `package.json` и дублируется в `js/version.mjs` и Service Worker. Автоматические тесты и release workflow проверяют их совпадение.
+Версия задаётся в `package.json` и дублируется в `js/version.mjs` и Service Worker. Runtime metadata страницы синхронизируется из `js/version.mjs`. Автоматические тесты и release workflow проверяют совпадение версий.
 
 После merge версии в `main` workflow `.github/workflows/release.yml`:
 
@@ -140,22 +166,27 @@ Auto Resume запрашивает только `read:user`. Этот scope до
 ```bash
 git clone https://github.com/Onmaynec/Auto-resume.git
 cd Auto-resume
-python -m http.server 8080
+npm install
+npx playwright install chromium
+node scripts/test-server.mjs --port=4173 --quality-stubs
 ```
 
 ## ✅ Проверка
 
 ```bash
 npm run verify
+npm run test:e2e
+npm run test:lighthouse
 ```
 
-Проверяются JavaScript-модули, RU/EN словари, ZIP/OOXML-структура DOCX, Unicode, порядок проектов, Markdown, локализованный ATS-экспорт, PWA shell, update lifecycle, release workflow, share payload и `git diff --check`.
+Проверяются JavaScript-модули, RU/EN словари, ZIP/OOXML-структура DOCX, presentation schema, миграции черновиков и публичных ссылок, renderer contracts, PWA shell, update lifecycle, browser flows, accessibility и Lighthouse budgets.
 
 ## 🔐 Приватность
 
 - анализируются только публичные данные GitHub;
 - текст вакансии обрабатывается локально;
 - настройки, язык и черновики находятся в браузере;
+- custom logo остаётся временным object URL текущей вкладки;
 - DOCX, Markdown, TXT и PDF формируются локально;
 - `/api/*` не кэшируется Service Worker;
 - проверка Releases не передаёт содержимое резюме;
