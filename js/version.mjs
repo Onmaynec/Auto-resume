@@ -23,4 +23,5 @@ if (typeof document !== 'undefined') {
   import('./resume-audit-bootstrap.mjs').catch(() => {});
   import('./application-tracker-ui.mjs').catch(() => {});
   import('./interview-prep-ui.mjs').catch(() => {});
+  import('./interview-prep-sync.mjs').catch(() => {});
 }
