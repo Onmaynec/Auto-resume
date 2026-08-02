@@ -1,8 +1,8 @@
-const APP_VERSION = '3.7.0';
+const APP_VERSION = '3.8.0';
 const SHELL_CACHE = `auto-resume-v${APP_VERSION}-shell-v1`;
 const RUNTIME_CACHE = `auto-resume-v${APP_VERSION}-runtime-v1`;
 const APP_SHELL = [
-  './', './index.html', './styles.css', './v21.css', './v22.css', './auth.css', './update.css', './application-kit.css', './resume-audit.css', './application-tracker.css', './app.js',
+  './', './index.html', './styles.css', './v21.css', './v22.css', './auth.css', './update.css', './application-kit.css', './resume-audit.css', './application-tracker.css', './interview-prep.css', './app.js',
   './manifest.webmanifest', './icons/app-icon.svg',
   './js/config.js', './js/data.js', './js/projects.js', './js/render.js', './js/resume.js',
   './js/utils.js', './js/project-selection.mjs', './js/resume-text.mjs', './js/share.mjs',
@@ -11,6 +11,7 @@ const APP_SHELL = [
   './js/application-kit.mjs', './js/application-kit-ui.mjs',
   './js/resume-audit.mjs', './js/resume-audit-ui.mjs', './js/resume-audit-bootstrap.mjs',
   './js/application-tracker.mjs', './js/application-tracker-ui.mjs',
+  './js/interview-prep.mjs', './js/interview-prep-ui.mjs', './js/interview-prep-sync.mjs',
 ];
 
 self.addEventListener('install', (event) => {

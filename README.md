@@ -1,6 +1,24 @@
-# ✨ Auto Resume v3.7
+# ✨ Auto Resume v3.8
 
-> GitHub-профиль превращается в адаптированное резюме, локальный пакет отклика, объяснимый ATS-аудит и приватную воронку откликов на русском или английском языке.
+> GitHub-профиль превращается в адаптированное резюме, локальный пакет отклика, объяснимый ATS-аудит, приватную воронку и пространство подготовки к интервью на русском или английском языке.
+
+## 🎤 Что нового в v3.8
+
+- добавлен полностью локальный **Interview Prep Lab** рядом с Application Tracker;
+- сессия связывается с откликом только через application ID, company и role;
+- RU/EN вопросы детерминированно строятся из matched skill names, missing skill names и публичных project names;
+- доступны категории `intro`, `technical`, `project`, `behavioral`, `gap` и `candidate`;
+- ответы редактируются локально, поддерживаются completion state и self-rating 0–5;
+- добавлен банк STAR-историй с situation, task, action и result;
+- readiness score 0–100 объясняется answer coverage, confidence, STAR evidence и interview planning;
+- поддерживаются versioned JSON import/export и локальный Markdown export;
+- исходный vacancy text, resume content, Application Kit и audit report в prep schema не входят;
+- prep data не входит в public share, workspace backup, API, Redis/KV или analytics;
+- public read-only resume не показывает Interview Prep panel;
+- engine, UI и CSS входят в offline PWA app shell;
+- добавлены unit, privacy contract и Chromium/axe tests.
+
+Схема, readiness model и privacy boundary описаны в [`docs/INTERVIEW_PREP.md`](docs/INTERVIEW_PREP.md).
 
 ## 🗂️ Что нового в v3.7
 
@@ -51,6 +69,7 @@
 - локальный Application Kit;
 - локальный Resume Quality Audit;
 - локальный Application Tracker;
+- локальный Interview Prep Lab;
 - сравнение GitHub-профилей;
 - выбор и сортировка проектов;
 - редактируемые RU/EN резюме;
@@ -61,6 +80,52 @@
 - PWA, offline app shell и безопасное автообновление;
 - локальные drafts, autosave и JSON backup;
 - light, dark и system themes.
+
+## 🎤 Interview Prep Lab
+
+Prep Lab использует отдельный versioned storage key:
+
+```text
+auto-resume:interview-prep:v1
+```
+
+Сессия содержит только allowlisted структурированные данные:
+
+```json
+{
+  "company": "Acme",
+  "role": "Frontend Engineer",
+  "locale": "ru",
+  "interviewDate": "2026-08-12",
+  "application": {
+    "id": "application-id",
+    "company": "Acme",
+    "role": "Frontend Engineer"
+  },
+  "skills": ["JavaScript", "Accessibility"],
+  "projects": ["resume-engine"],
+  "gaps": ["Kubernetes"],
+  "questions": [],
+  "stories": []
+}
+```
+
+Связь с откликом хранит только ID, компанию и роль. Notes, vacancy URL и полный tracker record не копируются.
+
+Генератор получает только подтверждённые или введённые пользователем skill names, отдельные missing skill names и публичные project names. Исходный текст вакансии и содержимое резюме не передаются. Missing skills создают честные gap-вопросы и не становятся заявлением об опыте.
+
+Readiness score является локальной эвристикой:
+
+| Компонент | Максимум |
+|---|---:|
+| Answer coverage | 45 |
+| Self-rating confidence | 25 |
+| Complete STAR evidence | 20 |
+| Interview planning | 10 |
+
+STAR-история считается полной только при заполненных situation, task, action и result. Score не является прогнозом найма.
+
+Dedicated JSON export переносит versioned prep schema. Markdown export содержит вопросы, ответы, self-ratings, STAR-истории и application ID. Все файлы создаются через browser Blob без загрузки на сервер.
 
 ## 🗂️ Application Tracker
 
@@ -167,6 +232,7 @@ Presentation schema отделена от контента резюме:
 | Application Kit Markdown/TXT | Отклик и интервью | Локальный редактируемый текст |
 | Audit Markdown/TXT | Проверка перед отправкой | Score, категории и issue codes |
 | Tracker JSON/CSV | Перенос и анализ воронки | Versioned import и CSV injection protection |
+| Interview Prep Markdown/JSON | Репетиция и перенос | Ответы, readiness и STAR без raw vacancy text |
 
 ## 🔗 Черновики и публичные ссылки
 
@@ -174,9 +240,9 @@ Workspace хранит локаль, безопасную presentation schema и
 
 Application Kit и Resume Quality Audit намеренно не входят в workspace, backup, public share payload, serverless API, Redis/KV или analytics.
 
-Application Tracker хранится отдельно. Его dedicated JSON export нужно сохранить перед очисткой site data или переносом на другое устройство.
+Application Tracker и Interview Prep Lab хранятся отдельно. Их dedicated JSON exports нужно сохранить перед очисткой site data или переносом на другое устройство.
 
-Public resume payload остаётся read-only и не показывает audit или tracker panels.
+Public resume payload остаётся read-only и не показывает audit, tracker или interview prep panels.
 
 ## 🔐 OAuth и API
 
@@ -200,7 +266,7 @@ UPSTASH_REDIS_REST_TOKEN=…
 RATE_LIMIT_SECRET=случайная_строка
 ```
 
-Поддерживаются `KV_REST_API_URL` и `KV_REST_API_TOKEN`. Без переменных используется memory fallback. OAuth tokens, vacancy text, resume content и tracker data в Redis не записываются.
+Поддерживаются `KV_REST_API_URL` и `KV_REST_API_TOKEN`. Без переменных используется memory fallback. OAuth tokens, vacancy text, resume content, tracker data и interview prep data в Redis не записываются.
 
 ## ☁️ Развёртывание
 
@@ -246,7 +312,7 @@ npm run test:lighthouse
 npm run verify
 ```
 
-Проверяются source syntax, RU/EN contracts, OAuth, Redis/KV, exports, PWA lifecycle, templates, Application Kit, Resume Quality Audit, Application Tracker, privacy boundaries, Chromium/axe и Lighthouse budgets.
+Проверяются source syntax, RU/EN contracts, OAuth, Redis/KV, exports, PWA lifecycle, templates, Application Kit, Resume Quality Audit, Application Tracker, Interview Prep Lab, privacy boundaries, Chromium/axe и Lighthouse budgets.
 
 ## 🤝 Участие и безопасность
 
@@ -262,12 +328,12 @@ npm run verify
 
 - GitHub profile analysis использует разрешённые публичные данные;
 - vacancy text обрабатывается локально;
-- drafts, preferences и tracker находятся в браузере;
+- drafts, preferences, tracker и interview prep находятся в браузере;
 - custom logo не загружается;
 - Application Kit и audit report живут в памяти вкладки;
 - exports создаются локально;
 - public resume хранится в URL fragment;
-- serverless API не получает содержимое резюме, вакансии или tracker records.
+- serverless API не получает содержимое резюме, вакансии, tracker records или prep sessions.
 
 ## 📜 Лицензия
 

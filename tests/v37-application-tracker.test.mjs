@@ -4,20 +4,21 @@ import test from 'node:test';
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
-test('v3.7 application tracker is connected to syntax checks and offline shell', async () => {
+test('application tracker remains connected to syntax checks and offline shell', async () => {
   const [packageSource, versionSource, serviceWorker] = await Promise.all([
     read('package.json'),
     read('js/version.mjs'),
     read('sw.js'),
   ]);
   const packageJson = JSON.parse(packageSource);
-  assert.equal(packageJson.version, '3.7.0');
+  assert.match(packageJson.version, /^\d+\.\d+\.\d+$/);
   for (const file of ['js/application-tracker.mjs', 'js/application-tracker-ui.mjs']) {
     assert.ok(packageJson.scripts.check.includes(`node --check ${file}`), `${file} must be syntax checked`);
     assert.ok(serviceWorker.includes(`./${file}`), `${file} must be cached`);
   }
   assert.match(serviceWorker, /\.\/application-tracker\.css/);
-  assert.match(versionSource, /APP_VERSION = '3\.7\.0'/);
+  assert.match(serviceWorker, new RegExp(`APP_VERSION = '${packageJson.version.replaceAll('.', '\\.')}';`));
+  assert.match(versionSource, new RegExp(`APP_VERSION = '${packageJson.version.replaceAll('.', '\\.')}';`));
   assert.match(versionSource, /import\('\.\/application-tracker-ui\.mjs'\)/);
 });
 
@@ -55,9 +56,8 @@ test('tracker UI is localized, accessible and supports local lifecycle operation
   assert.match(docs, /CSV injection/);
 });
 
-test('release documentation describes v3.7 tracker behavior', async () => {
+test('release documentation continues to describe tracker behavior', async () => {
   const [readme, changelog] = await Promise.all([read('README.md'), read('CHANGELOG.md')]);
-  assert.match(readme, /Auto Resume v3\.7/);
   assert.match(readme, /Application Tracker/);
   assert.match(readme, /docs\/APPLICATION_TRACKER\.md/);
   assert.match(changelog, /## v3\.7\.0/);

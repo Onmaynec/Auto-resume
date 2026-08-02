@@ -1,4 +1,4 @@
-export const APP_VERSION = '3.7.0';
+export const APP_VERSION = '3.8.0';
 export const RELEASE_REPOSITORY = 'Onmaynec/Auto-resume';
 export const RELEASE_API_URL = `https://api.github.com/repos/${RELEASE_REPOSITORY}/releases/latest`;
 export const RELEASE_PAGE_URL = `https://github.com/${RELEASE_REPOSITORY}/releases`;
@@ -11,7 +11,7 @@ export function syncVersionMetadata(documentRef = globalThis.document) {
   const title = documentRef.querySelector('meta[property="og:title"]');
   if (title) title.content = `Auto Resume v${minorVersion}`;
   const description = documentRef.querySelector('meta[name="description"]');
-  if (description) description.content = `Auto Resume v${minorVersion} — локальный трекер откликов, аудит резюме и Application Kit.`;
+  if (description) description.content = `Auto Resume v${minorVersion} — локальная подготовка к интервью, трекер откликов и аудит резюме.`;
   const brandVersion = documentRef.querySelector('.brand small');
   if (brandVersion) brandVersion.textContent = `v${minorVersion}`;
   return true;
@@ -22,4 +22,6 @@ if (typeof document !== 'undefined') {
   import('./application-kit-ui.mjs').catch(() => {});
   import('./resume-audit-bootstrap.mjs').catch(() => {});
   import('./application-tracker-ui.mjs').catch(() => {});
+  import('./interview-prep-ui.mjs').catch(() => {});
+  import('./interview-prep-sync.mjs').catch(() => {});
 }
