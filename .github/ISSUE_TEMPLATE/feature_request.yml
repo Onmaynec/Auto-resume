@@ -1,0 +1,57 @@
+name: Feature request
+description: Propose a user-visible or developer-workflow improvement
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the problem and desired outcome without publishing access tokens, OAuth cookies, client secrets, Redis credentials, private repository data, or confidential resume content. Security requests and vulnerabilities belong in private GitHub Security Advisories.
+  - type: dropdown
+    id: audience
+    attributes:
+      label: Primary audience
+      options:
+        - Resume author
+        - Recruiter or public-link viewer
+        - Contributor
+        - Maintainer or operator
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: Explain the concrete limitation or repeated workflow.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the user-visible outcome and important constraints.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility and privacy impact
+      description: Mention drafts, public links, exports, localization, accessibility, offline PWA, API, and data handling when relevant.
+    validations:
+      required: true
+  - type: checkboxes
+    id: readiness
+    attributes:
+      label: Readiness checklist
+      options:
+        - label: I searched existing Issues and Releases.
+          required: true
+        - label: I used synthetic examples and removed secrets or private data.
+          required: true
+        - label: I described backward compatibility and privacy implications.
+          required: true
