@@ -11,12 +11,14 @@ const updateModule = read('js/update.mjs');
 const updateCss = read('update.css');
 const releaseWorkflow = read('.github/workflows/release.yml');
 
-test('v3.2 version metadata is consistent', () => {
-  assert.equal(packageJson.version, '3.2.0');
-  assert.match(versionModule, /APP_VERSION = '3\.2\.0'/);
-  assert.match(worker, /APP_VERSION = '3\.2\.0'/);
-  assert.match(html, /Auto Resume v3\.2/);
-  assert.match(read('CHANGELOG.md'), /## v3\.2\.0 /);
+test('v3.3 version metadata is consistent', () => {
+  assert.equal(packageJson.version, '3.3.0');
+  assert.match(versionModule, /APP_VERSION = '3\.3\.0'/);
+  assert.match(versionModule, /syncVersionMetadata/);
+  assert.match(versionModule, /brandVersion\.textContent/);
+  assert.match(worker, /APP_VERSION = '3\.3\.0'/);
+  assert.match(read('CHANGELOG.md'), /## v3\.3\.0 — 2026-08-02/);
+  assert.match(read('README.md'), /Auto Resume v3\.3/);
 });
 
 test('update UI and browser module are connected safely', () => {
@@ -31,10 +33,11 @@ test('update UI and browser module are connected safely', () => {
   assert.match(updateCss, /prefers-reduced-motion/);
 });
 
-test('service worker waits for confirmation and caches the update manager', () => {
+test('service worker waits for confirmation and caches the update manager and template system', () => {
   assert.match(worker, /auto-resume-v\$\{APP_VERSION\}-shell/);
   assert.match(worker, /js\/update\.mjs/);
   assert.match(worker, /js\/version\.mjs/);
+  assert.match(worker, /js\/template-system\.mjs/);
   assert.match(worker, /update\.css/);
   assert.match(worker, /SKIP_WAITING/);
   const installBlock = worker.match(/self\.addEventListener\('install',[\s\S]*?\n\}\);/)?.[0] || '';
