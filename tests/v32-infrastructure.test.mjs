@@ -4,7 +4,7 @@ import fs from 'node:fs';
 
 const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 
-test('v3.2 storage modules are connected to profile and session APIs', () => {
+test('v3.2 distributed storage modules remain connected to profile and session APIs', () => {
   const github = read('api/github.js');
   const callback = read('api/auth/callback.js');
   const session = read('api/auth/session.js');
@@ -28,10 +28,11 @@ test('environment and threat model document Redis without token persistence', ()
   assert.match(readme, /Redis|Upstash/);
 });
 
-test('version metadata and release notes are ready for automatic v3.2 publishing', () => {
+test('version metadata and release notes stay consistent with package version', () => {
   const pkg = JSON.parse(read('package.json'));
-  assert.equal(pkg.version, '3.2.0');
-  assert.match(read('js/version.mjs'), /APP_VERSION = '3\.2\.0'/);
-  assert.match(read('sw.js'), /APP_VERSION = '3\.2\.0'/);
-  assert.match(read('CHANGELOG.md'), /## v3\.2\.0 /);
+  const escaped = pkg.version.replace(/\./g, '\\.');
+  assert.match(pkg.version, /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/);
+  assert.match(read('js/version.mjs'), new RegExp(`APP_VERSION = '${escaped}'`));
+  assert.match(read('sw.js'), new RegExp(`APP_VERSION = '${escaped}'`));
+  assert.match(read('CHANGELOG.md'), new RegExp(`## v${escaped} `));
 });
