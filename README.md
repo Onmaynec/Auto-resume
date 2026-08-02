@@ -1,6 +1,17 @@
-# ✨ Auto Resume v3.3
+# ✨ Auto Resume v3.4
 
 > GitHub-профиль превращается в адаптированное, редактируемое и публичное резюме на русском или английском языке.
+
+## 🤝 Что нового в v3.4
+
+- добавлен подробный [`CONTRIBUTING.md`](CONTRIBUTING.md) с Node.js 24 setup, архитектурой и командами;
+- добавлены структурированные Issue Forms для bug reports и feature requests;
+- blank Issues отключены, а уязвимости направляются в private GitHub Security Advisories;
+- добавлены [`SECURITY.md`](SECURITY.md), [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) и pull request template;
+- documented branch naming, Conventional Commit-style subjects и release workflow;
+- зафиксированы method allowlist, headers, cookie, CSRF, redaction и rate-limit требования для API;
+- добавлен dependency-free `npm run docs:check` для Markdown, ссылок, Issue Forms и governance contracts;
+- CI получил отдельный `documentation` job, а release verification также проверяет документацию.
 
 ## 🎨 Что нового в v3.3
 
@@ -159,7 +170,7 @@ RATE_LIMIT_SECRET=случайная_строка
 3. Добавьте в Vercel переменные из `.env.example`: `GITHUB_OAUTH_CLIENT_ID`, `GITHUB_OAUTH_CLIENT_SECRET`, `GITHUB_CALLBACK_URL` и случайный `SESSION_SECRET` длиной не менее 32 символов.
 4. Выполните новый deployment.
 
-Auto Resume запрашивает только `read:user`. Этот scope добавляет собственные private/internal contributions, но не даёт доступа к коду приватных репозиториев. Токен не попадает в HTML, URL, JavaScript или `localStorage`. Подробности и ограничения описаны в `docs/THREAT_MODEL.md`.
+Auto Resume запрашивает только `read:user`. Этот scope добавляет собственные private/internal contributions, но не даёт доступа к коду приватных репозиториев. Токен не попадает в HTML, URL, JavaScript или `localStorage`. Подробности и ограничения описаны в [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md).
 
 ## ▶️ Локальный запуск
 
@@ -175,11 +186,18 @@ node scripts/test-server.mjs --port=4173 --quality-stubs
 
 ```bash
 npm run verify
+npm run docs:check
 npm run test:e2e
 npm run test:lighthouse
 ```
 
-Проверяются JavaScript-модули, RU/EN словари, ZIP/OOXML-структура DOCX, presentation schema, миграции черновиков и публичных ссылок, renderer contracts, PWA shell, update lifecycle, browser flows, accessibility и Lighthouse budgets.
+Проверяются JavaScript-модули, RU/EN словари, ZIP/OOXML-структура DOCX, presentation schema, миграции черновиков и публичных ссылок, renderer contracts, PWA shell, update lifecycle, governance Markdown/links, Issue Forms, browser flows, accessibility и Lighthouse budgets.
+
+## 🤲 Участие и безопасность
+
+Перед изменениями прочитайте [`CONTRIBUTING.md`](CONTRIBUTING.md) и [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md). Обычные дефекты и предложения создаются через структурированные Issue Forms.
+
+Не публикуйте токены, cookies, client secrets, Redis credentials, private repository data или конфиденциальное содержимое резюме. Уязвимости сообщаются только через процесс в [`SECURITY.md`](SECURITY.md).
 
 ## 🔐 Приватность
 

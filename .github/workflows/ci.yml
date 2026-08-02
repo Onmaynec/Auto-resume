@@ -27,6 +27,17 @@ jobs:
       - name: Verify source and unit tests
         run: npm run verify
 
+  documentation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate governance docs and repository templates
+        run: npm run docs:check && npm run test:docs
+
   browser-e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 20

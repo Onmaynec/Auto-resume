@@ -1,0 +1,82 @@
+name: Bug report
+description: Report a reproducible defect in Auto Resume
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a defect.
+
+        Do not include access tokens, OAuth cookies, authorization codes, client secrets, Redis credentials, private repository data, IP addresses, or confidential resume content. Report security vulnerabilities privately through GitHub Security Advisories.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Profile loading
+        - Vacancy analysis
+        - Resume editor or templates
+        - Export
+        - Public link or drafts
+        - OAuth or serverless API
+        - PWA or offline update
+        - Documentation or CI
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Auto Resume version
+      description: Use the version shown in the application or GitHub Release.
+      placeholder: "3.4.0"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and operating system
+      placeholder: "Chrome 149 on Windows 11"
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the defect using synthetic or redacted data.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Open …
+        2. Select …
+        3. Observe …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Redacted logs or screenshots
+      description: Remove tokens, cookies, private URLs, usernames, IP addresses, and confidential resume text.
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety checklist
+      options:
+        - label: I removed secrets, private data, and confidential resume content.
+          required: true
+        - label: This is not a security vulnerability requiring private reporting.
+          required: true
+        - label: I checked the latest release and existing Issues.
+          required: true
