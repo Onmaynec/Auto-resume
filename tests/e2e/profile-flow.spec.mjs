@@ -66,7 +66,8 @@ test('comparison and public resume link preserve a read-only draft', async ({ pa
   await expect(page.locator('body')).toHaveClass(/shared-view/);
   await expect(page.locator('#sharedBanner')).toBeVisible();
   await expect(page.locator('#resumeSection')).toBeVisible();
-  await expect(page.locator('#resume')).toHaveAttribute('data-template', 'ats');
+  await expect(page.locator('#resume')).toHaveAttribute('data-template', 'ats-basic');
+  await expect(page.locator('#resume')).toHaveAttribute('data-template-version', '1');
   await expect(page.locator('#resume [contenteditable="true"]')).toHaveCount(0);
 });
 
