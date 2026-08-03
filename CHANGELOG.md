@@ -1,5 +1,23 @@
 # Changelog
 
+## v3.9.0 — 2026-08-03
+
+- добавлен полностью локальный Offer Decision Lab с versioned schema;
+- офферы могут связываться с Application Tracker только через application ID, company и role;
+- добавлена настраиваемая матрица из compensation, growth, team, product, work-life, stability и flexibility;
+- каждый критерий имеет пользовательские rating и weight 0–5;
+- итоговая оценка 0–100 объясняется weighted fit и ограниченным risk penalty за красные флаги;
+- добавлен расчёт first-year package из base, bonus, annual equity, sign-on, benefits и commute cost;
+- валюты не конвертируются и суммы сравниваются только внутри одной валюты;
+- добавлены decision deadlines, urgent states, cards, comparison table и локальные Markdown exports;
+- добавлены versioned JSON import/export и merge по newest updatedAt;
+- tracker notes, vacancy URLs, resume drafts, Application Kit, audit и interview answers не копируются;
+- Offer Lab data не входит в workspace backup, public share, API, Redis/KV или analytics;
+- public read-only resumes не показывают Offer Lab panel;
+- engine, UI и CSS добавлены в PWA app shell;
+- добавлены unit и release/privacy contract tests;
+- release metadata и Service Worker обновлены до 3.9.0.
+
 ## v3.8.0 — 2026-08-02
 
 - добавлен полностью локальный Interview Prep Lab с versioned schema;
