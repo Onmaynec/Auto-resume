@@ -1,6 +1,22 @@
-# ✨ Auto Resume v3.8
+# ✨ Auto Resume v3.9
 
-> GitHub-профиль превращается в адаптированное резюме, локальный пакет отклика, объяснимый ATS-аудит, приватную воронку и пространство подготовки к интервью на русском или английском языке.
+> GitHub-профиль превращается в адаптированное резюме, локальный пакет отклика, объяснимый ATS-аудит, приватную воронку, пространство подготовки к интервью и матрицу сравнения офферов на русском или английском языке.
+
+## 💼 Что нового в v3.9
+
+- добавлен полностью локальный **Offer Decision Lab** после Application Tracker и Interview Prep;
+- оффер связывается с откликом только через application ID, company и role;
+- матрица решения использует compensation, growth, team, product, work-life, stability и flexibility;
+- каждый критерий получает пользовательские rating и weight 0–5;
+- итоговая оценка 0–100 объясняется weighted fit и ограниченным risk penalty;
+- first-year package учитывает base, bonus, annual equity, sign-on, benefits и commute cost;
+- валюты не конвертируются и сравниваются только внутри исходной валюты;
+- доступны дедлайны, urgent states, карточки, comparison table и Markdown/JSON export;
+- Offer Lab data не входит в public share, workspace backup, API, Redis/KV или analytics;
+- public read-only resume не показывает Offer Lab panel;
+- engine, UI и CSS входят в offline PWA app shell.
+
+Схема, scoring model и privacy boundary описаны в [`docs/OFFER_LAB.md`](docs/OFFER_LAB.md).
 
 ## 🎤 Что нового в v3.8
 
@@ -70,6 +86,7 @@
 - локальный Resume Quality Audit;
 - локальный Application Tracker;
 - локальный Interview Prep Lab;
+- локальный Offer Decision Lab;
 - сравнение GitHub-профилей;
 - выбор и сортировка проектов;
 - редактируемые RU/EN резюме;
@@ -80,6 +97,26 @@
 - PWA, offline app shell и безопасное автообновление;
 - локальные drafts, autosave и JSON backup;
 - light, dark и system themes.
+
+## 💼 Offer Decision Lab
+
+Offer Lab использует отдельный versioned storage key:
+
+```text
+auto-resume:offer-lab:v1
+```
+
+Каждый оффер хранит только allowlisted поля: company, role, минимальную application reference, исходную currency, компоненты compensation, work model, contract type, decision deadline, ratings, weights, red flags и notes.
+
+Матрица нормализует пользовательские оценки в score 0–100. Каждый красный флаг уменьшает результат на три пункта, но общий risk penalty ограничен 18 пунктами. Это инструмент личного выбора, а не прогноз качества работодателя или карьерного успеха.
+
+First-year package рассчитывается локально:
+
+```text
+base + bonus + annual equity + sign-on + benefits - commute cost
+```
+
+Приложение не запрашивает exchange rates и не конвертирует валюты. JSON import объединяет duplicate IDs по наиболее новому `updatedAt`; Markdown export сохраняет исходные валюты и объяснение score.
 
 ## 🎤 Interview Prep Lab
 
@@ -233,6 +270,7 @@ Presentation schema отделена от контента резюме:
 | Audit Markdown/TXT | Проверка перед отправкой | Score, категории и issue codes |
 | Tracker JSON/CSV | Перенос и анализ воронки | Versioned import и CSV injection protection |
 | Interview Prep Markdown/JSON | Репетиция и перенос | Ответы, readiness и STAR без raw vacancy text |
+| Offer Lab Markdown/JSON | Сравнение решений | Score, риски и исходные валюты без conversion |
 
 ## 🔗 Черновики и публичные ссылки
 
@@ -240,9 +278,9 @@ Workspace хранит локаль, безопасную presentation schema и
 
 Application Kit и Resume Quality Audit намеренно не входят в workspace, backup, public share payload, serverless API, Redis/KV или analytics.
 
-Application Tracker и Interview Prep Lab хранятся отдельно. Их dedicated JSON exports нужно сохранить перед очисткой site data или переносом на другое устройство.
+Application Tracker, Interview Prep Lab и Offer Decision Lab хранятся отдельно. Их dedicated JSON exports нужно сохранить перед очисткой site data или переносом на другое устройство.
 
-Public resume payload остаётся read-only и не показывает audit, tracker или interview prep panels.
+Public resume payload остаётся read-only и не показывает audit, tracker, interview prep или offer panels.
 
 ## 🔐 OAuth и API
 
@@ -266,7 +304,7 @@ UPSTASH_REDIS_REST_TOKEN=…
 RATE_LIMIT_SECRET=случайная_строка
 ```
 
-Поддерживаются `KV_REST_API_URL` и `KV_REST_API_TOKEN`. Без переменных используется memory fallback. OAuth tokens, vacancy text, resume content, tracker data и interview prep data в Redis не записываются.
+Поддерживаются `KV_REST_API_URL` и `KV_REST_API_TOKEN`. Без переменных используется memory fallback. OAuth tokens, vacancy text, resume content, tracker data, interview prep data и offer data в Redis не записываются.
 
 ## ☁️ Развёртывание
 
@@ -312,7 +350,7 @@ npm run test:lighthouse
 npm run verify
 ```
 
-Проверяются source syntax, RU/EN contracts, OAuth, Redis/KV, exports, PWA lifecycle, templates, Application Kit, Resume Quality Audit, Application Tracker, Interview Prep Lab, privacy boundaries, Chromium/axe и Lighthouse budgets.
+Проверяются source syntax, RU/EN contracts, OAuth, Redis/KV, exports, PWA lifecycle, templates, Application Kit, Resume Quality Audit, Application Tracker, Interview Prep Lab, Offer Decision Lab, privacy boundaries, Chromium/axe и Lighthouse budgets.
 
 ## 🤝 Участие и безопасность
 
@@ -328,12 +366,12 @@ npm run verify
 
 - GitHub profile analysis использует разрешённые публичные данные;
 - vacancy text обрабатывается локально;
-- drafts, preferences, tracker и interview prep находятся в браузере;
+- drafts, preferences, tracker, interview prep и offer lab находятся в браузере;
 - custom logo не загружается;
 - Application Kit и audit report живут в памяти вкладки;
 - exports создаются локально;
 - public resume хранится в URL fragment;
-- serverless API не получает содержимое резюме, вакансии, tracker records или prep sessions.
+- serverless API не получает содержимое резюме, вакансии, tracker records, prep sessions или offer records.
 
 ## 📜 Лицензия
 
