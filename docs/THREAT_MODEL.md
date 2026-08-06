@@ -1,48 +1,31 @@
-# Auto Resume v3.0 Threat Model
+# Auto Resume 3.8 threat model
 
-## Assets
+Auto Resume 3.8 combines GitHub OAuth, optional Redis/KV, local resume data, templates, browser-only Application Kit/Resume Quality Audit and two separate local databases: Application Tracker and Interview Prep.
 
-- GitHub OAuth access token;
-- encrypted OAuth session cookie;
-- PKCE verifier and OAuth `state`;
-- user identity and private contribution statistics;
-- server-side OAuth client secret and session encryption secret.
+## Protected data
 
-## Trust boundaries
+OAuth/session secrets, authenticated contribution statistics, resume drafts/public links, raw vacancy text, Kit/Audit output, tracker records and interview answers/STAR stories each have separate storage and transport boundaries.
 
-1. Browser ↔ Auto Resume serverless API over HTTPS.
-2. Auto Resume serverless API ↔ GitHub OAuth and API endpoints.
-3. Public profile analytics ↔ authenticated self analytics.
-4. Local drafts/public links ↔ OAuth session. These subsystems remain independent.
+## Controls
 
-## Implemented controls
+OAuth uses PKCE S256, unpredictable `state`, `read:user` and AES-256-GCM encrypted `HttpOnly`, `Secure`, `SameSite=Lax` cookies. Browser JavaScript never receives the access token.
 
-- Authorization Code Flow with PKCE S256.
-- Unpredictable `state`, checked with a timing-safe comparison.
-- OAuth token is encrypted with AES-256-GCM inside an `HttpOnly`, `Secure`, `SameSite=Lax` cookie.
-- Browser JavaScript receives only a sanitized session summary; the token is never returned.
-- OAuth scope is limited to `read:user`. Auto Resume cannot read private repository code.
-- Authenticated self responses use a separate cache partition and `private, no-store` response headers.
-- Logout clears the cookie; disconnect revokes the GitHub app grant.
-- Session mutation requires a same-origin request and is excluded from the Service Worker cache.
-- Callback errors use stable codes and never log access tokens, authorization codes or cookies.
+Public/authenticated cache namespaces are separate. Redis/KV stores no OAuth token, raw vacancy text, resume content, Kit/Audit output, tracker records or prep sessions. Optional denylisting stores only hashed session metadata.
 
-## Known limitations
+Template definitions are data-only; custom logo remains a temporary local `blob:` URL.
 
-- Stateless encrypted cookies cannot be centrally revoked before expiration without rotating `SESSION_SECRET`; disconnect uses GitHub grant revocation to invalidate the token.
-- A stolen valid cookie can be replayed until expiration. HTTPS, HttpOnly, SameSite and an eight-hour TTL reduce this risk.
-- Availability depends on GitHub OAuth and API endpoints.
-- Redis-backed server-side session revocation is tracked separately in Issue #13.
+Application Kit receives normalized matching data, not raw vacancy text. Resume Quality Audit receives current draft plus normalized requirement names and does not rewrite it.
 
-## Secret rotation
+Application Tracker persists in `auto-resume:application-tracker:v1`; draft relations contain ID/name only. Tracker is excluded from workspace backup, public share, API, Redis/KV and analytics.
 
-Rotate `SESSION_SECRET` to invalidate all local sessions. Rotate `GITHUB_OAUTH_CLIENT_SECRET` in GitHub and deployment settings after suspected exposure. Never commit either value.
+Interview Prep persists in `auto-resume:interview-prep:v1`. Its Tracker relation is limited to application ID/company/role. Raw vacancy text, resume content, Kit output, Audit report, Tracker notes and vacancy URL are excluded. Readiness is an explainable local heuristic and must not be treated as an employment decision or hiring prediction.
 
-## Redis/KV и распределённая инфраструктура v3.2
+Public read-only resumes hide Audit, Tracker and Prep panels.
 
-- OAuth token, cookie, текст вакансии и содержимое резюме никогда не записываются в Redis.
-- Ключи rate limiting используют HMAC/хэш IP или session id, а не исходные идентификаторы.
-- Authenticated-self данные имеют отдельный cache namespace и не читаются публичным запросом.
-- Session denylist опционален и хранит только хэш `sid`, `revokedAt` и TTL до истечения cookie.
-- При недоступном Redis запросы переходят на локальный memory fallback; ошибка storage не раскрывается клиенту.
-- Метрики содержат только тип cache result, backend, latency, degraded flag и HTTP status.
+## Remaining limitations
+
+A stolen valid session cookie can be replayed until expiry unless denylisted or secrets are rotated. Clearing browser site data deletes Tracker and Prep unless the user exported their dedicated JSON backups.
+
+## Reporting
+
+Use [private vulnerability reporting](https://github.com/Onmaynec/Auto-resume/security/advisories/new). Rotate OAuth/session/Redis secrets independently after suspected exposure.
