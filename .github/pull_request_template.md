@@ -1,47 +1,47 @@
 # Pull request
 
-## Summary
+## Что меняется
 
-Describe the problem, the chosen solution, and the user or developer impact.
+Кратко опишите проблему, выбранное решение и влияние на пользователя или разработку.
 
 Closes #
 
-## Change type
+## Тип изменения
 
 - [ ] Feature
 - [ ] Fix
 - [ ] Documentation
-- [ ] Tests or CI
-- [ ] Security or privacy
+- [ ] Tests / CI
+- [ ] Security / privacy
 - [ ] Release metadata
 
-## Validation
+## Проверка
 
 - [ ] `npm run verify`
-- [ ] `npm run docs:check` when documentation, templates, or links changed
-- [ ] `npm run test:e2e` for user-visible, OAuth, export, storage, sharing, or PWA changes
-- [ ] `npm run test:lighthouse` for shell, styling, loading, or accessibility changes
-- [ ] Failure artifacts and logs contain no secrets or private data
+- [ ] `npm run docs:check` — если менялись documentation, templates или links
+- [ ] `npm run test:e2e` — для UI, OAuth, export, storage, sharing или PWA
+- [ ] `npm run test:lighthouse` — для shell, styling, loading или accessibility
+- [ ] Logs и failure artifacts не содержат secrets/private data
 
-## Quality checklist
+## Контракты проекта
 
-- [ ] RU and EN localization keys and copy remain aligned
-- [ ] Privacy and security boundaries are preserved
-- [ ] Accessibility, keyboard navigation, labels, and reduced motion were considered
-- [ ] Existing drafts, public links, exports, and legacy migrations remain compatible
-- [ ] New or changed API endpoints enforce method, headers, cookies, CSRF, rate limits, and redacted logs
-- [ ] Required runtime files were added to the PWA `APP_SHELL`
-- [ ] Screenshots or recordings are attached for visual changes, or marked not applicable
-- [ ] Tests use synthetic fixtures and do not contain credentials or confidential resume data
+- [ ] RU/EN localization осталась синхронной
+- [ ] Privacy и security boundaries не расширены случайно
+- [ ] Accessibility, keyboard navigation, labels и reduced motion учтены
+- [ ] Existing drafts, public links, exports и migrations остаются compatible
+- [ ] API changes учитывают methods, headers, cookies, CSRF, rate limits и redaction
+- [ ] Новый обязательный runtime file добавлен в `APP_SHELL`
+- [ ] Для visual changes приложены redacted screenshots или указано N/A
+- [ ] Tests используют synthetic fixtures, а не credentials/confidential resume data
 
-## Release checklist
+## Release
 
-Complete this section only when the version changes.
+Заполняется только при изменении версии.
 
-- [ ] `package.json`, `js/version.mjs`, and `sw.js` use the same SemVer
-- [ ] `CHANGELOG.md` contains the matching `## vX.Y.Z` section
-- [ ] The branch will be merged through CI; no release tag was created manually
+- [ ] `package.json`, `js/version.mjs` и `sw.js` содержат один SemVer
+- [ ] `CHANGELOG.md` содержит секцию `## vX.Y.Z`
+- [ ] Release tag не создавался вручную до прохождения CI
 
 ## Screenshots
 
-Not applicable, or attach redacted before/after screenshots.
+N/A или приложите redacted before/after screenshots.
