@@ -2,136 +2,54 @@
 
 ## v3.8.0 — 2026-08-02
 
-- добавлен полностью локальный Interview Prep Lab с versioned schema;
-- prep sessions связываются с Application Tracker только через application ID, company и role;
-- добавлена детерминированная генерация RU/EN вопросов категорий intro, technical, project, behavioral, gap и candidate;
-- генератор использует только matched skill names, явно указанные навыки, missing skill names и публичные project names;
-- missing skills остаются gap-вопросами и не превращаются в заявления об опыте;
-- добавлены редактируемые ответы, completion state и self-rating 0–5;
-- добавлен локальный банк STAR-историй с situation, task, action и result;
-- readiness score 0–100 объясняется answer coverage, confidence, STAR evidence и interview planning;
-- добавлены versioned JSON import/export и локальный Markdown export;
-- исходный vacancy text, resume content, Application Kit и audit report не входят в prep schema;
-- prep data не входит в workspace backup, public share, API, Redis/KV или analytics;
-- public read-only resumes не показывают Interview Prep panel;
-- engine, UI и CSS добавлены в PWA app shell;
-- старый v3.7 tracker release contract сделан version-agnostic;
-- добавлены unit, privacy contract и Chromium/axe tests;
-- release metadata и Service Worker обновлены до 3.8.0.
+- added local Interview Prep Lab with separate versioned storage;
+- Prep links to Tracker only by application ID, company and role;
+- added deterministic RU/EN questions, editable answers, self-rating and STAR stories;
+- readiness score 0–100 is explained by answer coverage, confidence, STAR evidence and planning;
+- raw vacancy text, resume content, Kit and Audit report are excluded from Prep schema;
+- added dedicated JSON/Markdown portability, offline support and privacy/browser coverage.
 
 ## v3.7.0 — 2026-08-02
 
-- добавлен полностью локальный Application Tracker с versioned schema;
-- записи содержат company, role, HTTPS vacancy URL, status, applied date, follow-up date, notes и optional draft reference;
-- добавлены этапы `saved`, `applied`, `screening`, `interview`, `offer`, `rejected` и `withdrawn`;
-- overdue и due-soon follow-up получают приоритетную сортировку;
-- добавлены поиск, status/follow-up filters и локальная статистика;
-- связь с резюме хранит только draft ID и name без содержимого resume draft;
-- добавлены CRUD, быстрое изменение статуса и безопасное удаление;
-- добавлены versioned JSON export/import и CSV export с formula-injection protection;
-- tracker data не входит в workspace backup, public share, API, Redis/KV или analytics;
-- public read-only resumes не показывают tracker panel;
-- engine, UI и CSS добавлены в PWA app shell;
-- старый v3.6 release contract сделан version-agnostic;
-- добавлены unit, privacy contract и Chromium/axe tests;
-- release metadata и Service Worker обновлены до 3.7.0.
+- added local Application Tracker with statuses, follow-up workflow, filters and statistics;
+- draft relation stores ID/name only;
+- added dedicated JSON import/export and CSV formula-injection protection;
+- Tracker is excluded from workspace backup, public share, API, Redis/KV and analytics.
 
 ## v3.6.0 — 2026-08-02
 
-- добавлен полностью локальный Resume Quality Audit с versioned schema;
-- итоговый score 0–100 разделён на completeness, evidence, ATS readiness и readability;
-- добавлены проверки headline, контактов, summary, навыков, проектов, HTTPS-ссылок, метрик и action verbs;
-- vacancy matching использует только извлечённые requirement names и не получает исходный vacancy text;
-- добавлены стабильные RU/EN issue codes, severity и объяснимые deductions;
-- audit panel автоматически появляется в редакторе и пересчитывается после пользовательских изменений;
-- отчёт не изменяет резюме автоматически;
-- добавлены clipboard и локальные Markdown/TXT exports;
-- audit report не входит в drafts, backup, public share, API, Redis/KV или analytics;
-- public read-only resumes не показывают audit panel;
-- engine, bootstrap, UI и CSS добавлены в PWA app shell;
-- добавлены unit, privacy contract и Chromium/axe tests;
-- release metadata и Service Worker обновлены до 3.6.0.
+- added explainable local Resume Quality Audit across completeness, evidence, ATS readiness and readability;
+- audit does not rewrite user text and remains outside workspace/share/API.
 
 ## v3.5.0 — 2026-08-02
 
-- добавлена versioned Application Kit schema с безопасной нормализацией;
-- после vacancy analysis генерируются RU/EN cover letter, evidence prompts, gap plan и interview questions;
-- добавлены варианты тона `concise`, `balanced` и `detailed`;
-- генерация опирается только на matched skills и публичные metadata репозиториев;
-- missing skills не описываются как имеющийся опыт;
-- project links ограничены HTTPS;
-- пакет редактируется, копируется и экспортируется локально в Markdown/TXT;
-- исходный vacancy text не входит в generated schema, drafts, backup, public share, storage или API requests;
-- Application Kit modules и CSS добавлены в PWA app shell;
-- добавлены unit, integration и Chromium privacy/export tests;
-- версия проекта повышена до 3.5.0.
+- added browser-only Application Kit with cover letter, evidence prompts, gap plan and interview questions;
+- raw vacancy text is not part of generated kit data.
 
 ## v3.4.0 — 2026-08-02
 
-- добавлены `CONTRIBUTING.md`, `SECURITY.md` и `CODE_OF_CONDUCT.md`;
-- добавлены YAML Issue Forms и pull request template;
-- blank Issues отключены, vulnerability reports направляются в private Security Advisories;
-- добавлен dependency-free documentation checker;
-- CI получил отдельный `documentation` job;
-- версия проекта повышена до 3.4.0.
+- added structured contribution/security workflow, private vulnerability reporting and documentation checks.
 
 ## v3.3.0 — 2026-08-02
 
-- добавлена versioned presentation schema и безопасные миграции;
-- добавлены `visual-classic`, `visual-studio`, `visual-minimal` и `ats-basic`;
-- добавлены font, density, spacing, accent и WCAG contrast check;
-- custom logo остаётся локальным и не сериализуется;
-- добавлены renderer, migration, persistence и Chromium tests;
-- версия проекта повышена до 3.3.0.
+- added versioned visual/ATS templates, safe presentation migrations and local custom logo.
 
 ## v3.2.0 — 2026-08-01
 
-- добавлен Upstash Redis / Vercel KV REST adapter;
-- добавлены distributed cache, rate limiting, stale-while-revalidate и memory fallback;
-- добавлен optional session denylist без хранения OAuth token;
-- версия проекта повышена до 3.2.0.
+- added optional Redis/KV shared cache, distributed rate limiting, request coordination and session denylisting.
 
 ## v3.1.0 — 2026-08-01
 
-- добавлена проверка последнего стабильного GitHub Release;
-- Service Worker применяет update только после подтверждения;
-- добавлен idempotent release workflow для tag и GitHub Release;
-- версия проекта повышена до 3.1.0.
+- added controlled PWA updates and automated verified releases.
 
 ## v3.0.0 — 2026-08-01
 
-- добавлен GitHub OAuth Authorization Code Flow + PKCE S256;
-- используется минимальный scope `read:user`;
-- OAuth token хранится в encrypted HttpOnly cookie;
-- private/internal contributions доступны только для собственного профиля;
-- версия проекта повышена до 3.0.0.
+- added GitHub OAuth with PKCE, encrypted HttpOnly sessions and authenticated-self analytics.
 
-## v2.4.0 — 2026-08-01
+## v2.x
 
-- добавлены локальные DOCX и Markdown exports;
-- DOCX содержит OOXML, Unicode и кликабельные ссылки.
+- introduced local DOCX/Markdown exports, RU/EN localization, PWA/drafts, profile comparison, vacancy analysis and public links.
 
-## v2.3.0 — 2026-08-01
+## v1.x
 
-- добавлена полная RU/EN локализация;
-- локаль сохраняется в preferences, drafts, backup и public share.
-
-## v2.2.0 — 2026-08-01
-
-- добавлены PWA, offline app shell, drafts, autosave и JSON backup.
-
-## v2.1.0 — 2026-08-01
-
-- добавлены сравнение профилей, recent profiles, темы и CI.
-
-## v2.0.0 — 2026-08-01
-
-- добавлены vacancy analysis, language history и public links.
-
-## v1.1.0 — 2026-08-01
-
-- добавлены project selection, editing и ATS export.
-
-## v1.0.0
-
-- первая версия генератора резюме по GitHub-профилю.
+- initial GitHub-profile resume generation, project selection, editing and ATS export.
