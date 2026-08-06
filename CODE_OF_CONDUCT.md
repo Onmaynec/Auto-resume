@@ -1,56 +1,34 @@
 # Code of Conduct
 
-## Our pledge
+Auto Resume — технический open-source проект. Обсуждения, Issues, pull requests и reviews должны оставаться рабочими: критикуйте код и решение, а не человека.
 
-We pledge to make participation in Auto Resume a harassment-free experience for everyone, regardless of age, body size, disability, ethnicity, sex characteristics, gender identity and expression, experience level, education, socioeconomic status, nationality, personal appearance, race, religion, or sexual identity and orientation.
+## Нормальное участие
 
-We commit to acting and interacting in ways that contribute to an open, welcoming, diverse, inclusive, and healthy community.
+Ожидается, что участники:
 
-## Expected behavior
+- общаются без оскорблений и травли;
+- спокойно относятся к разным уровням опыта и точкам зрения;
+- дают конкретный, проверяемый feedback;
+- признают ошибки и исправляют их;
+- не раскрывают чужие персональные данные, credentials или private reports;
+- не давят на участника с требованием раскрыть личность, место работы или другую ненужную для проекта информацию.
 
-Examples of behavior that contributes to a positive environment include:
+## Недопустимое поведение
 
-- demonstrating empathy and kindness;
-- respecting different viewpoints and experiences;
-- giving and accepting constructive feedback;
-- taking responsibility, apologizing, and learning from mistakes;
-- focusing on what is best for the project and its users;
-- protecting personal information, credentials, and confidential reports.
+Не допускаются harassment, threats, trolling, сексуализированные комментарии/изображения, personal/political attacks, публикация чужой private information без разрешения и сознательное раскрытие security/privacy данных.
 
-## Unacceptable behavior
+Maintainers могут удалить или отредактировать неподходящий контент, закрыть обсуждение, временно ограничить участие или заблокировать пользователя. Решение должно быть пропорционально ситуации и учитывать приватность участников.
 
-Unacceptable behavior includes:
+## Где действует документ
 
-- sexualized language or imagery and unwelcome sexual attention;
-- trolling, insulting or derogatory comments, and personal or political attacks;
-- public or private harassment;
-- publishing another person's private information without explicit permission;
-- pressuring contributors to disclose credentials, private data, identity, or employment details;
-- other conduct that could reasonably be considered inappropriate in a professional setting.
+Правила применяются в репозитории и в публичных пространствах, где человек официально представляет Auto Resume.
 
-## Enforcement responsibilities
+## Как сообщить о проблеме
 
-Project maintainers are responsible for clarifying and enforcing these standards. They may remove, edit, or reject comments, commits, code, Issues, and other contributions that do not align with this Code of Conduct.
+Обычную проблему поведения можно передать владельцу репозитория через GitHub-профиль. Если сообщение содержит security/private data, используйте [private vulnerability reporting](https://github.com/Onmaynec/Auto-resume/security/advisories/new), а не публичный Issue.
 
-Enforcement decisions should be fair, proportionate, and privacy-conscious.
+За добросовестное сообщение о проблеме не должно быть retaliation. Maintainers по возможности сохраняют приватность reporter и других затронутых людей.
 
-## Scope
+## Основа
 
-This Code applies in repository spaces and when an individual officially represents the project in public spaces.
-
-## Reporting and enforcement
-
-Report conduct concerns privately to the repository owner through their GitHub profile. When a report contains sensitive security or privacy information, use the repository's [private vulnerability reporting](https://github.com/Onmaynec/Auto-resume/security/advisories/new).
-
-Do not retaliate against anyone who reports a concern in good faith. Maintainers will protect the privacy and safety of reporters as far as reasonably possible.
-
-Possible consequences include:
-
-1. a private correction or warning;
-2. removal of inappropriate content;
-3. temporary limits on participation;
-4. a permanent ban from project spaces.
-
-## Attribution
-
-This Code is adapted from the Contributor Covenant, version 2.1, available at [contributor-covenant.org](https://www.contributor-covenant.org/version/2/1/code_of_conduct.html).
+Этот документ основан на Contributor Covenant 2.1, но сокращён и адаптирован под рабочий процесс Auto Resume. Оригинал: [Contributor Covenant 2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct.html).
