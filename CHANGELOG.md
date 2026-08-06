@@ -1,84 +1,59 @@
 # Changelog
 
+## Unreleased — browser quality gates
+
+- added deterministic Chromium E2E coverage for the main resume, export, sharing, OAuth and offline flows;
+- added axe accessibility checks for key application states;
+- added Lighthouse budgets for performance, accessibility, best practices and SEO;
+- browser checks use local fixtures/stubs instead of production credentials or third-party CDN availability;
+- failure-only Playwright and Lighthouse artifacts are uploaded by CI.
+
 ## v3.2.0 — 2026-08-01
 
-- добавлен общий Upstash Redis / Vercel KV REST-адаптер без обязательной npm-зависимости;
-- публичный и authenticated-self кэш разделены независимыми namespace;
-- добавлен распределённый fixed-window rate limiting по HMAC-отпечатку IP или OAuth-сессии;
-- реализованы stale-while-revalidate, локальная дедупликация и distributed lock против cache stampede;
-- при сбое Redis приложение автоматически использует безопасный memory fallback;
-- добавлен опциональный session denylist с TTL без хранения OAuth-токена;
-- добавлены privacy-safe заголовки и метрики HIT/MISS/STALE, backend latency и degraded mode;
-- обновлены environment template, threat model и deployment documentation;
-- добавлены unit и integration тесты Redis REST, TTL, partitioning, rate limits, fallback и denylist;
-- полный набор из 77 автоматических проверок проходит без ошибок;
-- версия проекта повышена до 3.2.0.
+- added optional Upstash Redis/Vercel KV storage for shared cache and distributed rate limiting;
+- separated public and authenticated-self cache namespaces;
+- added stale-while-revalidate and protection against duplicate concurrent GitHub requests;
+- added memory fallback when the external store is missing or unavailable;
+- added optional session denylisting without storing OAuth tokens;
+- added privacy-safe cache/rate-limit metrics and tests.
 
 ## v3.1.0 — 2026-08-01
 
-- добавлена фоновая проверка последнего стабильного GitHub Release;
-- добавлено RU/EN уведомление об обновлении с release notes и действиями «Обновить сейчас» / «Позже»;
-- Service Worker загружает новый app shell в фоне и применяет его только после подтверждения пользователя;
-- локальные черновики, настройки, история и OAuth-сессия не очищаются при обновлении;
-- добавлены строгая SemVer-проверка и фильтрация недоверенных release payload/URL;
-- добавлен идемпотентный GitHub Actions workflow: проверка → тег `vX.Y.Z` → GitHub Release;
-- release notes автоматически извлекаются из соответствующей секции `CHANGELOG.md`;
-- workflow поддерживает ручной `workflow_dispatch` и не создаёт дубликаты тегов или релизов;
-- добавлены unit и integration проверки update lifecycle, PWA cache и release workflow;
-- полный набор из 61 автоматической проверки проходит без ошибок;
-- версия проекта повышена до 3.1.0.
+- added background checks for the latest stable GitHub Release;
+- added user-confirmed PWA update activation and release notes links;
+- added automated verified tagging/release workflow.
 
 ## v3.0.0 — 2026-08-01
 
-- добавлен GitHub OAuth Authorization Code Flow с PKCE S256 и `state`;
-- запрашивается только `read:user`, без доступа к коду приватных репозиториев;
-- OAuth token хранится только в AES-256-GCM encrypted HttpOnly-cookie;
-- добавлены session status, logout и отзыв GitHub grant;
-- собственная аналитика включает private/internal contributions;
-- authenticated self responses отделены от публичного кэша и используют `no-store`;
-- добавлены threat model, environment template и OAuth security tests;
-- полный набор из 53 автоматических проверок проходит без ошибок;
-- версия пакета обновлена до 3.0.0.
+- added GitHub OAuth Authorization Code Flow with PKCE and `read:user`;
+- added encrypted `HttpOnly` session cookies, session status, logout and grant revocation;
+- separated authenticated analytics from public cache;
+- added the initial threat model and OAuth security tests.
 
 ## v2.4.0 — 2026-08-01
 
-- добавлен локальный экспорт в DOCX с настоящим текстовым слоем и кликабельными ссылками;
-- добавлен Markdown-экспорт с YAML metadata и совместимостью с GitHub;
-- DOCX содержит A4-разметку, стили заголовков и core properties документа;
-- оба формата сохраняют пользовательский порядок проектов, отредактированный текст и выбранную локаль;
-- генератор DOCX работает без внешнего сервера и сторонних runtime-зависимостей;
-- добавлены проверки ZIP/OOXML-структуры, Unicode, ссылок, локализации и порядка проектов;
-- PWA shell и документация обновлены, версия пакета повышена до 2.4.0.
+- added local DOCX and Markdown exports with editable text, links and RU/EN metadata.
 
 ## v2.3.0 — 2026-08-01
 
-- добавлена полноценная RU/EN локализация без перезагрузки страницы;
-- интерфейсные строки вынесены в единые словари `js/i18n.mjs`;
-- локализованы статусы, ошибки, метрики, подсказки, графики, сравнение профилей и конструктор проектов;
-- ATS/TXT/PDF используют выбранный язык;
-- язык сохраняется в настройках, локальных черновиках и JSON backup;
-- публичная ссылка передаёт язык резюме, а ссылки v2 автоматически открываются на русском;
-- добавлены проверки одинакового набора ключей, fallback-языка и локализованного экспорта;
-- версия пакета обновлена до 2.3.0.
+- added RU/EN localization across UI, exports, drafts and public links.
 
 ## v2.2.0 — 2026-08-01
 
-- добавлены PWA, offline app shell, локальные черновики, автосохранение и JSON backup;
-- добавлены индикаторы сети и свежести GitHub-данных;
-- Service Worker не кэширует `/api/*` ответы.
+- added PWA/offline shell, drafts, autosave and JSON backup.
 
 ## v2.1.0 — 2026-08-01
 
-- добавлены сравнение профилей, недавние профили, светлая/тёмная темы и CI.
+- added profile comparison, recent profiles, themes and CI.
 
 ## v2.0.0 — 2026-08-01
 
-- добавлены анализ вакансии, история языков и публичные ссылки.
+- added vacancy analysis, language history and public links.
 
 ## v1.1.0 — 2026-08-01
 
-- добавлены выбор проектов, редактирование и ATS-friendly экспорт.
+- added project selection, editing and ATS export.
 
 ## v1.0.0
 
-- первая версия генератора резюме по публичному GitHub-профилю.
+- first public GitHub-profile resume generator.
