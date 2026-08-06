@@ -1,48 +1,30 @@
-# Auto Resume v3.0 Threat Model
+# Auto Resume 3.5 threat model
 
-## Assets
+Auto Resume 3.5 combines GitHub OAuth, optional Redis/KV, local resume data, versioned templates and browser-only Application Kit.
 
-- GitHub OAuth access token;
-- encrypted OAuth session cookie;
-- PKCE verifier and OAuth `state`;
-- user identity and private contribution statistics;
-- server-side OAuth client secret and session encryption secret.
+## Protected assets
 
-## Trust boundaries
+- OAuth token/session/PKCE state and server-side secrets;
+- authenticated contribution statistics;
+- local resume drafts/public share data;
+- raw vacancy text and normalized matching result;
+- Application Kit output;
+- template/presentation data.
 
-1. Browser ↔ Auto Resume serverless API over HTTPS.
-2. Auto Resume serverless API ↔ GitHub OAuth and API endpoints.
-3. Public profile analytics ↔ authenticated self analytics.
-4. Local drafts/public links ↔ OAuth session. These subsystems remain independent.
+## Controls
 
-## Implemented controls
+OAuth uses PKCE S256, unpredictable `state`, `read:user` and AES-256-GCM encrypted `HttpOnly`, `Secure`, `SameSite=Lax` cookies. Browser JavaScript never receives the token.
 
-- Authorization Code Flow with PKCE S256.
-- Unpredictable `state`, checked with a timing-safe comparison.
-- OAuth token is encrypted with AES-256-GCM inside an `HttpOnly`, `Secure`, `SameSite=Lax` cookie.
-- Browser JavaScript receives only a sanitized session summary; the token is never returned.
-- OAuth scope is limited to `read:user`. Auto Resume cannot read private repository code.
-- Authenticated self responses use a separate cache partition and `private, no-store` response headers.
-- Logout clears the cookie; disconnect revokes the GitHub app grant.
-- Session mutation requires a same-origin request and is excluded from the Service Worker cache.
-- Callback errors use stable codes and never log access tokens, authorization codes or cookies.
+Public/authenticated cache namespaces are separate; private responses use `no-store`. Redis/KV stores no OAuth token, raw vacancy text or resume content. Optional denylisting stores only a hashed session id plus revocation metadata.
 
-## Known limitations
+Template definitions are data-only and cannot inject arbitrary executable code. Custom logo remains a temporary local `blob:` URL.
 
-- Stateless encrypted cookies cannot be centrally revoked before expiration without rotating `SESSION_SECRET`; disconnect uses GitHub grant revocation to invalidate the token.
-- A stolen valid cookie can be replayed until expiration. HTTPS, HttpOnly, SameSite and an eight-hour TTL reduce this risk.
-- Availability depends on GitHub OAuth and API endpoints.
-- Redis-backed server-side session revocation is tracked separately in Issue #13.
+Application Kit receives normalized requirement/skill names and public project metadata, not raw vacancy text. Its UI does not use `fetch`, `localStorage` or `sessionStorage`; kit data is excluded from drafts, backup, public share, Redis/KV and serverless API requests. Missing skills remain gaps rather than fabricated experience.
 
-## Secret rotation
+## Remaining limitations
 
-Rotate `SESSION_SECRET` to invalidate all local sessions. Rotate `GITHUB_OAUTH_CLIENT_SECRET` in GitHub and deployment settings after suspected exposure. Never commit either value.
+A stolen valid session cookie can be replayed until expiry unless denylisted or secrets are rotated. Memory fallback is instance-local. Application Kit is intentionally ephemeral, so reload removes unsaved kit content.
 
-## Redis/KV и распределённая инфраструктура v3.2
+## Reporting and rotation
 
-- OAuth token, cookie, текст вакансии и содержимое резюме никогда не записываются в Redis.
-- Ключи rate limiting используют HMAC/хэш IP или session id, а не исходные идентификаторы.
-- Authenticated-self данные имеют отдельный cache namespace и не читаются публичным запросом.
-- Session denylist опционален и хранит только хэш `sid`, `revokedAt` и TTL до истечения cookie.
-- При недоступном Redis запросы переходят на локальный memory fallback; ошибка storage не раскрывается клиенту.
-- Метрики содержат только тип cache result, backend, latency, degraded flag и HTTP status.
+Security reports use [private vulnerability reporting](https://github.com/Onmaynec/Auto-resume/security/advisories/new). Rotate `SESSION_SECRET`, OAuth client secret, Redis/KV credentials and `RATE_LIMIT_SECRET` independently after suspected exposure.
