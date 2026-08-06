@@ -1,83 +1,56 @@
-# Application Kit
+# Application Kit — Auto Resume 3.5
 
-Application Kit превращает локальный результат анализа вакансии в редактируемый пакет отклика. Генерация выполняется в браузере и не вызывает serverless API.
+Application Kit turns the normalized result of local vacancy analysis into editable application material. Generation happens in the browser and does not call the serverless API.
 
-## Состав пакета
+## Output
 
-Пакет версии 1 содержит:
+A kit contains:
 
-- RU/EN сопроводительное письмо;
-- match score из существующего vacancy analysis;
-- evidence prompts для подтверждённых навыков и релевантных проектов;
-- gap plan для требований, которые публичный GitHub-профиль не подтверждает;
-- вопросы для технического интервью;
-- выбранный вариант тона: `concise`, `balanced` или `detailed`.
+- RU/EN cover letter;
+- match score already calculated by vacancy analysis;
+- evidence prompts for confirmed skills and relevant public projects;
+- gap plan for requirements not confirmed by the profile;
+- interview questions;
+- tone: `concise`, `balanced` or `detailed`.
 
-## Правила достоверности
+## Input boundary
 
-Генератор использует только:
+The generator receives only normalized profile/vacancy-analysis data: profile name/login, `matched`, `missing`, requirement names, public repository metadata, locale and tone.
 
-- имя, login и bio текущего профиля;
-- списки `matched`, `missing` и `requirements` из локального анализа;
-- публичные metadata репозиториев;
-- выбранную локаль и тон.
+Raw vacancy text is not passed to the kit generator. A missing requirement never becomes a claim of experience; it can only appear as a gap, learning/demo suggestion or interview topic.
 
-Навыки из `missing` никогда не описываются как существующий опыт. Они попадают только в план уточнения ожиданий, учебный демонстратор и вопросы для интервью.
+Project links are HTTPS-only and user-controlled text is escaped/normalized.
 
-Project links проходят allowlist: разрешён только протокол HTTPS. Пользовательский HTML и JavaScript не выполняются.
+## Lifetime and storage
 
-## Приватность
+Application Kit is intentionally ephemeral. It is not written to:
 
-Исходный текст вакансии не передаётся генератору пакета. UI-модуль не использует `fetch`, `localStorage` или `sessionStorage`.
-
-Application Kit не добавляется в:
-
-- workspace drafts и JSON backup;
-- public resume payload и URL fragment;
+- workspace drafts;
+- JSON backup;
+- public share payload;
 - Redis/KV;
-- serverless API requests;
-- telemetry или логи.
+- OAuth/session data;
+- analytics or server logs.
 
-После перезагрузки страницы пакет исчезает. Пользователь может сохранить его локально через Markdown/TXT export.
+The UI module does not use `fetch`, `localStorage` or `sessionStorage`. Reloading the page removes the kit unless the user exported it.
 
-## Схема
+## Export
 
-```json
-{
-  "schemaVersion": 1,
-  "locale": "ru",
-  "tone": "balanced",
-  "profile": {
-    "name": "Octo Cat",
-    "login": "octocat"
-  },
-  "matchScore": 67,
-  "coverLetter": "...",
-  "evidence": [],
-  "gapPlan": [],
-  "interviewQuestions": [],
-  "privacy": "..."
-}
-```
+The current edited result can be copied or saved locally as Markdown/TXT. Files are created in the browser; no upload is required.
 
-Нормализатор ограничивает длину строк, количество элементов и числовые диапазоны. Неизвестная локаль переключается на `ru`, неизвестный тон — на `balanced`.
+## Offline behavior
 
-## Offline и PWA
+`application-kit.css`, `js/application-kit.mjs` and `js/application-kit-ui.mjs` are part of the PWA `APP_SHELL`, so generation/edit/export continue to work offline after the app has loaded once.
 
-В Service Worker app shell входят:
+## Development contract
 
-- `application-kit.css`;
-- `js/application-kit.mjs`;
-- `js/application-kit-ui.mjs`.
+Changes to the generator should preserve deterministic normalization, RU/EN output, bounded sections, HTTPS links and the rule that raw vacancy text is never serialized into the kit.
 
-После первой успешной загрузки генерация и экспорт работают offline. Обновление файлов происходит через обычный versioned PWA cache.
-
-## Проверки
+Run:
 
 ```bash
 npm run verify
 npm run test:e2e
-npm run test:lighthouse
 ```
 
-Unit-тесты проверяют RU/EN output, deterministic fingerprint, ограничения секций, HTTPS-ссылки и отсутствие исходного текста вакансии. Chromium flow проверяет редактирование, clipboard, Markdown/TXT export, смену локали и отсутствие секретной строки в storage/API requests.
+Chromium coverage should verify editing, clipboard/download behavior and the absence of secret/raw vacancy data from storage and API requests.
