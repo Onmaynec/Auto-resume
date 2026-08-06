@@ -1,60 +1,22 @@
-# Interview Prep Lab
+# Interview Prep Lab — Auto Resume 3.8
 
-Interview Prep Lab is a browser-only workspace for practising interview answers and STAR stories. It can be linked to an Application Tracker record without copying the application notes, vacancy source, resume draft, Application Kit or Resume Audit.
+Interview Prep Lab — browser-only workspace для репетиции ответов и STAR stories. Он может быть связан с записью Application Tracker, но не копирует её целиком.
 
-## Storage schema
-
-The feature uses a dedicated key:
+## Хранилище
 
 ```text
 auto-resume:interview-prep:v1
 ```
 
-The top-level payload is versioned:
+Top-level payload versioned. Session содержит allowlisted поля: ID, company, role, locale, interview date, маленькую application reference, skills, projects, gaps, questions, stories и timestamps.
 
-```json
-{
-  "version": 1,
-  "sessions": [],
-  "updatedAt": "2026-08-02T10:00:00.000Z"
-}
-```
+Application reference включает только `id`, `company` и `role`. Tracker notes, vacancy URL и полный record не копируются.
 
-A session stores allowlisted structured data:
+## Генерация вопросов
 
-```json
-{
-  "id": "acme-frontend-engineer-1785664800000",
-  "company": "Acme",
-  "role": "Frontend Engineer",
-  "locale": "en",
-  "interviewDate": "2026-08-12",
-  "application": {
-    "id": "application-id",
-    "company": "Acme",
-    "role": "Frontend Engineer"
-  },
-  "skills": ["JavaScript", "Accessibility"],
-  "projects": ["resume-engine"],
-  "gaps": ["Kubernetes"],
-  "questions": [],
-  "stories": []
-}
-```
+Generator принимает normalized role/skill/requirement names, отдельные missing-skill names и public project names. Raw vacancy text и resume content не являются входом.
 
-The application relation is intentionally a small reference. Tracker notes, URLs and full tracker records are not copied.
-
-## Question generation
-
-The generator accepts only:
-
-- locale;
-- role name;
-- normalized requirement or skill names;
-- normalized missing-skill names;
-- public project names.
-
-The raw vacancy text is never an input. The generated categories are stable:
+Категории стабильны:
 
 - `intro`;
 - `technical`;
@@ -63,74 +25,50 @@ The raw vacancy text is never an input. The generated categories are stable:
 - `gap`;
 - `candidate`.
 
-Generation is deterministic for the same normalized input. Questions are bounded to 16 records and 420 characters each.
+Для одинакового normalized input генерация детерминирована. В одной сессии не больше 16 вопросов; текст каждого ограничен 420 символами. Missing skills создают gap-вопросы, а не заявления об опыте.
 
-## Answers and self-rating
+## Ответы и self-rating
 
-Every question stores:
-
-- editable answer text;
-- completion state;
-- self-rating from 0 to 5.
-
-Answers are capped at 5,000 characters. The application never claims that a high self-rating proves professional experience.
+У каждого вопроса есть редактируемый answer, completion state и self-rating 0–5. Answer ограничен 5000 символами. Высокий self-rating не считается доказательством реального опыта.
 
 ## STAR stories
 
-A session can contain up to ten STAR stories. Each story has:
+В сессии может быть до 10 STAR stories. История содержит title, situation, task, action, result и optional tags. Для readiness story считается полной только когда meaningful text присутствует во всех четырёх STAR-полях.
 
-- title;
-- situation;
-- task;
-- action;
-- result;
-- optional tags.
+## Readiness score
 
-The readiness calculation counts a STAR story as complete only when all four sections contain meaningful text.
-
-## Readiness model
-
-The score is an explainable local heuristic from 0 to 100:
-
-| Component | Maximum |
-|---|---:|
+| Компонент | Максимум |
+| --- | ---: |
 | Answer coverage | 45 |
 | Self-rating confidence | 25 |
 | Complete STAR evidence | 20 |
 | Interview planning | 10 |
 
-Planning awards points for an interview date and a prepared answer to the candidate-questions prompt. The score is not a hiring prediction.
+Planning учитывает наличие interview date и подготовленный ответ в категории candidate. Score — объяснимая локальная эвристика, не прогноз результата интервью или найма.
 
-## Import and export
+## Import и export
 
-Dedicated JSON export contains the versioned prep schema. Import rejects future schema versions and merges duplicate session IDs using the newest `updatedAt`.
+Dedicated JSON export переносит versioned prep schema. Import отклоняет future versions и при duplicate session IDs сохраняет запись с наиболее новым `updatedAt`.
 
-Markdown export contains:
-
-- company, role and date;
-- readiness score;
-- questions and answers;
-- self-ratings;
-- STAR stories;
-- application ID only.
-
-Files are created with browser `Blob` and `URL.createObjectURL`; no upload is performed.
+Markdown export включает company/role/date, readiness, вопросы/ответы/self-ratings, STAR stories и application ID. Файлы создаются локально через browser `Blob`; upload не выполняется.
 
 ## Privacy boundary
 
-Interview Prep Lab may read the current in-memory vacancy analysis only to extract normalized requirement names and may read public repository names. It does not persist or export raw vacancy text or resume content.
+Prep data исключены из:
 
-Prep data is excluded from:
-
-- workspace drafts and workspace backup;
-- public resume payloads;
-- Application Kit and Resume Audit schemas;
+- workspace drafts и общего backup;
+- public resume payload;
+- Application Kit и Audit schemas;
 - serverless API requests;
-- Redis or KV;
+- Redis/KV;
 - analytics.
 
-The panel is removed in public read-only mode. Clearing site data removes the local prep database unless the dedicated JSON export was saved first.
+Raw vacancy text, resume content, Application Kit output и Audit report в prep schema не сохраняются. Public read-only mode удаляет Prep panel.
 
-## Offline behavior
+Очистка site data удаляет prep database, если пользователь заранее не сделал dedicated JSON export.
 
-`interview-prep.mjs`, `interview-prep-ui.mjs` and `interview-prep.css` are part of the PWA app shell. After one successful online load, existing sessions and all local editing/export operations remain available offline.
+## Offline и tests
+
+Prep engine/UI/CSS входят в PWA `APP_SHELL`. После первой online загрузки existing sessions, editing и local exports работают offline.
+
+Tests должны покрывать normalization, deterministic questions, limits, readiness formula, STAR completeness, import/export, Tracker reference boundary, public-link hiding и отсутствие raw vacancy/resume data в storage/API.
