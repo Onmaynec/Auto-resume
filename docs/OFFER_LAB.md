@@ -1,64 +1,34 @@
-# Offer Decision Lab
+# Offer Decision Lab — Auto Resume 3.9
 
-Offer Decision Lab is a browser-only decision matrix for comparing job offers after the Application Tracker and Interview Prep stages.
+Offer Decision Lab — полностью локальная матрица для сравнения офферов после Tracker и Interview Prep. Она помогает разложить решение на пользовательские критерии, но не пытается предсказывать качество работодателя или карьерный результат.
 
-## Storage schema
-
-The feature uses a dedicated versioned key:
+## Хранилище
 
 ```text
 auto-resume:offer-lab:v1
 ```
 
-The top-level payload contains only normalized offer records:
+Top-level payload versioned и содержит только normalized offer records. Максимум — 60 офферов.
 
-```json
-{
-  "version": 1,
-  "records": [],
-  "updatedAt": "2026-08-03T12:00:00.000Z"
-}
-```
+Record хранит ID, company, role, locale, небольшую application reference, currency, compensation fields, work model, contract type, deadline, ratings/weights, red flags, notes и timestamps.
 
-Each offer stores allowlisted decision data:
+Application reference ограничена `id`, `company`, `role`. Tracker notes, vacancy URL, resume draft, raw vacancy text, Application Kit, Audit report и Interview Prep answers не копируются.
 
-```json
-{
-  "id": "acme-staff-engineer-1785758400000",
-  "company": "Acme",
-  "role": "Staff Engineer",
-  "locale": "en",
-  "application": {
-    "id": "application-id",
-    "company": "Acme",
-    "role": "Staff Engineer"
-  },
-  "currency": "EUR",
-  "compensation": {
-    "base": 120000,
-    "bonus": 12000,
-    "equity": 15000,
-    "signOn": 5000,
-    "benefits": 3000,
-    "commuteCost": 1200
-  },
-  "workModel": "hybrid",
-  "contractType": "employment",
-  "deadline": "2026-08-10",
-  "ratings": {},
-  "weights": {},
-  "redFlags": [],
-  "notes": "",
-  "createdAt": "2026-08-03T12:00:00.000Z",
-  "updatedAt": "2026-08-03T12:00:00.000Z"
-}
-```
+## Нормализация
 
-The Application Tracker relation is intentionally limited to application ID, company and role. Tracker notes, vacancy URLs, resume drafts, vacancy text, Application Kit content, audit reports and interview answers are never copied.
+- company — до 120 символов;
+- role — до 160;
+- application ID — до 180;
+- notes — до 4000;
+- до 16 уникальных red flags, каждый до 300 символов;
+- money fields — от 0 до 1,000,000,000 с точностью до двух знаков;
+- rating и weight каждого критерия — целое 0–5.
 
-## Decision matrix
+Поддерживаемые currencies: EUR, USD, GBP, RUB, UAH, KZT, PLN, CHF, CAD, AUD и OTHER. Work models: remote, hybrid, onsite, flexible. Contract types: employment, contract, internship, other.
 
-The matrix contains seven user-controlled criteria:
+## Матрица решения
+
+Семь критериев:
 
 - compensation;
 - growth;
@@ -68,56 +38,56 @@ The matrix contains seven user-controlled criteria:
 - stability;
 - flexibility.
 
-Every criterion has a rating from 0 to 5 and a weight from 0 to 5. The weighted fit score is normalized to 0–100. If all weights are zero, the engine uses an equal-weight average rather than returning an invalid score.
+Каждый criterion имеет rating и weight 0–5. Weighted score нормализуется к 0–100. Если все weights равны нулю, engine использует равный вес критериев вместо некорректного деления.
 
-Each recorded red flag subtracts three points, with a maximum penalty of 18 points. The result is clamped to 0–100 and exposes the weighted score, risk penalty and per-criterion components.
+Каждый red flag вычитает 3 балла. Максимальный risk penalty — 18. Итоговый score ограничивается диапазоном 0–100 и отдельно показывает weighted score, penalty и component values.
 
-The score is a personal decision aid. It is not a prediction of job satisfaction, career success or employer quality.
+Score — личная decision aid. Он не является прогнозом job satisfaction, employer quality, career success или юридической/финансовой рекомендацией.
 
-## Compensation model
+## Compensation
 
-The first-year package is calculated as:
+First-year package:
 
 ```text
-base + bonus + annual equity value + sign-on + benefits - commute cost
+base + bonus + annual equity + sign-on + benefits - commute cost
 ```
 
-The application never converts currencies or fetches exchange rates. Amounts are compared only inside the same currency. Users remain responsible for taxes, vesting terms, exercise costs, benefit eligibility and legal interpretation.
+Приложение не конвертирует валюты и не запрашивает exchange rates. Сравнение сумм имеет смысл только внутри одной currency. Taxes, vesting, exercise costs, eligibility и юридические условия пользователь оценивает самостоятельно.
 
 ## Deadlines
 
-Decision deadlines are classified locally as:
+Deadline state вычисляется локально:
 
-- expired;
-- urgent: within three days;
-- soon: within seven days;
-- scheduled;
-- none.
+- `expired` — дата прошла;
+- `urgent` — сегодня или в пределах 3 дней;
+- `soon` — в пределах 7 дней;
+- `scheduled` — позже;
+- `none` — дата не задана.
 
-No notifications, calendar events or server-side reminders are created.
+Offer Lab не создаёт notifications, calendar events или server-side reminders.
 
-## Import and export
+## Import и export
 
-Dedicated JSON export contains only the versioned Offer Lab schema. Import rejects future schema versions and merges duplicate record IDs using the newest `updatedAt` value.
+Dedicated JSON export содержит только versioned Offer Lab schema. Import отклоняет future versions; duplicate IDs объединяются по newest `updatedAt`.
 
-Markdown exports are available for individual offer cards and the comparison table. Comparison exports keep each original currency and explicitly state that no currency conversion was performed.
+Markdown export доступен для отдельного оффера и comparison table. Оригинальные currencies сохраняются, рядом явно указывается отсутствие currency conversion.
 
 ## Privacy boundary
 
-Offer Lab data is excluded from:
+Offer Lab исключён из:
 
-- workspace backup;
-- resume drafts;
-- public share payloads;
-- GitHub API requests;
-- OAuth sessions;
-- Redis or KV caches;
+- workspace backup и resume drafts;
+- public share payload;
+- GitHub API/OAuth data;
+- Redis/KV;
 - analytics;
-- Application Kit and Resume Audit schemas;
+- Application Kit и Audit schemas;
 - Interview Prep sessions.
 
-The UI is removed in public read-only mode. Clearing browser site data removes Offer Lab records unless a dedicated JSON export was saved first.
+Public read-only mode скрывает Offer Lab UI. Clearing site data удаляет records, если dedicated JSON export не сохранён заранее.
 
-## Offline behavior
+## Offline и tests
 
-`offer-lab.mjs`, `offer-lab-ui.mjs` and `offer-lab.css` are part of the PWA app shell. After one successful online load, existing offers, editing, scoring and local exports remain available offline.
+`offer-lab.mjs`, UI и CSS входят в PWA `APP_SHELL`; existing offers, editing, scoring и exports работают offline после первой загрузки.
+
+Tests должны покрывать normalization/limits, score and penalty, zero-weight fallback, compensation, deadline states, same-currency comparison, import merge, privacy boundaries и public-read-only hiding.
