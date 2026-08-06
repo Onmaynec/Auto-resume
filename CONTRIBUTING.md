@@ -1,12 +1,12 @@
 # Contributing to Auto Resume
 
-Thank you for improving Auto Resume. Contributions should preserve the project's privacy guarantees, bilingual interface, offline PWA behavior, and compatibility with existing drafts and public resume links.
+Changes must preserve privacy boundaries, RU/EN Localization, offline PWA behavior and compatibility of existing drafts/public links. In 3.7, Application Tracker is a separate local database: it stores only a small draft reference and must stay outside workspace backup, public share, API and Redis/KV.
 
-Before participating, read the [Code of Conduct](CODE_OF_CONDUCT.md). Security vulnerabilities must follow the private process in [SECURITY.md](SECURITY.md), not a public Issue.
+Read [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md). Security reports follow [`SECURITY.md`](SECURITY.md), not public Issues.
 
-## Development environment
+## Environment
 
-Auto Resume uses Node.js 24 in GitHub Actions.
+CI uses Node.js 24.
 
 ```bash
 git clone https://github.com/Onmaynec/Auto-resume.git
@@ -16,131 +16,47 @@ npx playwright install chromium
 node scripts/test-server.mjs --port=4173 --quality-stubs
 ```
 
-The quality server provides deterministic local fixtures and stubs. Never add production credentials, OAuth cookies, private repository data, or real resume content to fixtures.
+Use synthetic fixtures only. Do not put production credentials, OAuth cookies, private repository data or confidential resume/vacancy/tracker content into tests.
 
 ## Commands
 
-| Command | Purpose |
-|---|---|
-| `npm run check` | Syntax-check production, API, test-server, and quality scripts |
-| `npm run docs:check` | Validate governance Markdown, local links, Issue Forms, and security contacts |
-| `npm test` | Run dependency-free unit and integration tests |
-| `npm run test:e2e` | Run Chromium user flows and axe accessibility checks |
-| `npm run test:lighthouse` | Run Lighthouse performance, accessibility, best-practices, and SEO budgets |
-| `npm run verify` | Run syntax, documentation, unit/integration, and whitespace checks |
+- `npm run check` — syntax checks;
+- `npm run docs:check` — documentation/governance contracts;
+- `npm test` — unit/integration tests;
+- `npm run test:e2e` — Chromium/axe;
+- `npm run test:lighthouse` — Lighthouse budgets;
+- `npm run verify` — syntax + docs + tests + `git diff --check`.
 
-Run `npm run verify` before every push. Run the browser suite for user-visible flows, authentication, exports, sharing, storage, Service Worker, or accessibility changes.
+## Workflow
 
-## Architecture
-
-The repository is intentionally dependency-light:
-
-- `index.html`, `styles.css`, and versioned CSS files define the browser shell;
-- `app.js` coordinates loading, rendering, preferences, workspace, and exports;
-- `js/*.mjs` contains testable modules for localization, sharing, templates, OAuth state, updates, and persistence;
-- `api/` contains serverless GitHub and OAuth endpoints;
-- `sw.js` owns the offline app shell and update lifecycle;
-- `tests/*.test.mjs` contains unit and integration contracts;
-- `tests/e2e/` contains Playwright and axe scenarios;
-- `scripts/test-server.mjs` provides deterministic browser fixtures;
-- `.github/workflows/` defines CI and release automation.
-
-Keep resume content independent from presentation settings. DOCX, Markdown, and TXT exports must not depend on a visual template.
-
-## Branches and commits
-
-Create work from the latest `main`.
-
-Use one of these branch forms:
-
-- `feat/<short-description>` for product features;
-- `fix/<short-description>` for defects;
-- `docs/<short-description>` for documentation-only work;
-- `test/<short-description>` for quality infrastructure;
-- `agent/<short-description>` for automated repository work.
-
-Use Conventional Commit-style subjects:
-
-```text
-feat: add a resume section
-fix: preserve locale in shared links
-docs: document the OAuth threat model
-test: cover an offline migration
-chore: update release metadata
-```
-
-Keep commits focused. Do not mix generated artifacts, unrelated refactors, or local credentials into a pull request.
-
-## Pull request workflow
-
-The supported release path is:
+Use focused `feat/*`, `fix/*`, `docs/*`, `test/*` or `agent/*` branches and Conventional Commit subjects.
 
 ```text
 branch → pull request → CI → main → release workflow → branch cleanup
 ```
 
-1. Rebase or merge the latest `main` into the branch.
-2. Open a pull request and complete `.github/pull_request_template.md`.
-3. Keep the pull request in draft while required checks are failing.
-4. Address test, privacy, accessibility, localization, and compatibility findings.
-5. Merge only after `verify`, `documentation`, `browser-e2e`, and `lighthouse` succeed.
-6. Delete the merged branch when it is no longer needed.
+Resolve privacy, accessibility, Localization and compatibility findings before merge. Release changes synchronize `package.json`, `js/version.mjs`, `sw.js` and `CHANGELOG.md`.
 
-Do not create a release tag manually for a normal release. A version change merged into `main` triggers `.github/workflows/release.yml`, which verifies metadata, creates `vX.Y.Z`, and publishes GitHub Release notes from `CHANGELOG.md`.
+## API and auth
 
-A release pull request must update all of:
+Endpoints need method allowlists, security/cache headers, `HttpOnly`/`Secure`/`SameSite` cookies, same-origin and CSRF controls, PKCE/`state`, rate limits/timeouts and redacted logs.
 
-- `package.json`;
-- `js/version.mjs`;
-- `sw.js`;
-- the matching `## vX.Y.Z` section in `CHANGELOG.md`.
+## Application Kit and Audit
 
-## Serverless API requirements
+Application Kit must not receive raw vacancy text or fabricate missing skills. Resume Quality Audit uses normalized requirement names, stable issue codes and never rewrites the draft automatically. Both remain outside workspace/share/API/Redis.
 
-Every new or changed endpoint under `api/` must:
+## Application Tracker
 
-- explicitly allow supported HTTP methods and return `405` for others;
-- set appropriate content type, cache, referrer, framing, and sniffing headers;
-- use `HttpOnly`, `Secure`, and intentional `SameSite` cookie attributes;
-- protect state-changing requests with same-origin and CSRF controls;
-- preserve OAuth `state` and PKCE validation where applicable;
-- avoid tokens, cookies, authorization codes, session identifiers, IP addresses, private profile data, and resume content in logs;
-- use `no-store` for authenticated or private responses;
-- apply rate limiting and bounded timeouts to external requests;
-- return stable, sanitized error codes rather than upstream secrets.
+Tracker records are bounded and normalized. Vacancy URLs are HTTPS-only. The draft relation stores only ID/name, not resume content. CSV export must preserve formula-injection protection for values beginning with `=`, `+`, `-` or `@`.
 
-Tests must prove method handling, origin checks, cookie policy, redaction, and failure behavior.
+Tracker data must not enter workspace backup, public share, OAuth/API payloads, Redis/KV, Application Kit, Audit reports or analytics. Public read-only mode must hide the panel.
 
-## Localization
+## PWA and APP_SHELL
 
-Russian and English dictionaries in `js/i18n.mjs` must contain identical keys.
+Required same-origin runtime files belong in `APP_SHELL`; bump `APP_VERSION` for releases. `/api/*` must not be cached. Tracker engine/UI/styles must keep working offline after initial load.
 
-When adding interface text:
+## Documentation and security
 
-1. add both RU and EN values;
-2. use `data-i18n`, `data-i18n-placeholder`, `data-i18n-aria-label`, or `t()`;
-3. avoid concatenating translated sentence fragments;
-4. test interpolation and fallback behavior;
-5. run `npm run verify` and the relevant browser scenario.
+Run `npm run docs:check`; keep one H1, valid relative links and sequential heading levels.
 
-## PWA cache and offline behavior
-
-When adding a required same-origin runtime file to `index.html`, add it to `APP_SHELL` in `sw.js`. A release must also bump `APP_VERSION`, producing a new cache namespace.
-
-Do not cache `/api/*`. Test online installation, an offline navigation reload, and update activation when changing Service Worker behavior.
-
-## Documentation and links
-
-Use one H1 per governance document, do not skip heading levels, and keep relative links valid. Run:
-
-```bash
-npm run docs:check
-```
-
-The checker also verifies that Issue Forms and the pull request template warn contributors not to publish secrets.
-
-## Reporting bugs and proposing features
-
-Use the repository's structured Issue Forms. Include a minimal reproduction with redacted logs and synthetic data.
-
-Do not publish access tokens, OAuth cookies, client secrets, Redis credentials, private repository data, or confidential resume content. Use [private vulnerability reporting](https://github.com/Onmaynec/Auto-resume/security/advisories/new) for suspected security issues.
+Never publish access token, OAuth cookie, client secret, Redis credential, private repository data or confidential resume/tracker data. Use [private vulnerability reporting](https://github.com/Onmaynec/Auto-resume/security/advisories/new).
