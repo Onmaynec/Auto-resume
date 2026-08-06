@@ -1,24 +1,28 @@
 # Resume Quality Audit
 
-Resume Quality Audit в Auto Resume v3.6 проверяет текущий отредактированный черновик резюме полностью в браузере. Проверка не изменяет текст автоматически и не отправляет содержимое на сервер.
+Resume Quality Audit проверяет текущий черновик резюме прямо в браузере. Он не переписывает текст за пользователя и не отправляет содержимое резюме или вакансии на сервер.
 
-## Архитектура
+Функция появилась в Auto Resume 3.6 и работает как отдельный детерминированный слой поверх редактора.
+
+## Как устроено подключение
 
 ```text
 js/version.mjs
   └─ dynamic import → js/resume-audit-bootstrap.mjs
-       ├─ наблюдает за render lifecycle редактора
+       ├─ следит за render lifecycle редактора
        └─ передаёт draft + requirement names
             └─ js/resume-audit-ui.mjs
                  └─ js/resume-audit.mjs
 ```
 
-- `js/resume-audit.mjs` — чистый детерминированный audit engine.
-- `js/resume-audit-ui.mjs` — live-панель, clipboard и локальные Markdown/TXT exports.
-- `js/resume-audit-bootstrap.mjs` — подключение к существующему редактору без изменения workspace/share schemas.
-- `resume-audit.css` — отдельные адаптивные стили с reduced-motion fallback.
+- `js/resume-audit.mjs` содержит правила и расчёт score;
+- `js/resume-audit-ui.mjs` отвечает за live-панель, clipboard и локальные Markdown/TXT exports;
+- `js/resume-audit-bootstrap.mjs` подключает аудит к существующему редактору;
+- `resume-audit.css` содержит отдельные адаптивные стили и reduced-motion fallback.
 
-## Schema
+Audit не меняет workspace/share schema.
+
+## Формат результата
 
 ```json
 {
@@ -51,74 +55,85 @@ js/version.mjs
 }
 ```
 
-В отчёт не входят исходный текст вакансии, HTML редактора, OAuth session, токены, cookies или local logo.
+Raw vacancy text, HTML редактора, OAuth session, tokens, cookies и local logo в отчёт не входят.
 
-## Категории
+## Как считается score
 
-Каждая категория даёт максимум 25 баллов.
+Есть четыре категории по 25 баллов.
 
 ### Completeness
 
-Проверяет имя, профессиональный headline, контакт, summary, проекты и навыки.
+Проверяются базовые части резюме: имя, headline, контакт, summary, проекты и навыки.
 
 ### Evidence
 
-Проверяет HTTPS-ссылки, содержательность project descriptions, глаголы действия, измеримые результаты и повторяющиеся описания.
+Проверяются HTTPS-ссылки, содержательность project descriptions, глаголы действия, измеримые результаты и повторяющиеся формулировки.
 
 ### ATS readiness
 
-Проверяет общий объём текста, количество навыков, декоративные символы и покрытие только извлечённых названий требований.
+Проверяются объём текста, количество навыков, декоративные символы и покрытие только тех требований, которые уже были извлечены из вакансии.
 
-Покрытие вакансии не добавляет неподтверждённый опыт. `KEYWORD_GAPS` предлагает проверить доказательства или оставить пробел честно обозначенным.
+Если часть требований не подтверждена, правило `KEYWORD_GAPS` предлагает проверить доказательства или оставить gap явно обозначенным. Audit не добавляет отсутствующий опыт.
 
 ### Readability
 
-Проверяет длину headline и summary, длинные предложения, размеры project descriptions и повторяющиеся начала.
+Проверяются длина headline и summary, слишком длинные предложения, размеры описаний проектов и повторяющиеся начала фраз.
 
 ## Stable issue codes
 
-Issue code является машинно-стабильным идентификатором. Заголовок и рекомендация локализуются.
+Каждое правило имеет стабильный machine-readable code. Текст заголовка и рекомендации может локализоваться, но смысл code не должен незаметно меняться.
 
 Примеры:
 
-- `SUMMARY_MISSING`
-- `PROJECT_URL_INVALID`
-- `METRICS_MISSING`
-- `KEYWORD_GAPS`
-- `LONG_SENTENCES`
-- `REPETITIVE_WORDING`
+- `SUMMARY_MISSING`;
+- `PROJECT_URL_INVALID`;
+- `METRICS_MISSING`;
+- `KEYWORD_GAPS`;
+- `LONG_SENTENCES`;
+- `REPETITIVE_WORDING`.
 
-Новые правила должны получать новый code. Смысл существующего code нельзя незаметно менять.
+Если появляется новое правило с другим смыслом, ему нужен новый code.
 
-## Privacy boundary
+## Какие данные получает Audit
 
-Audit engine получает только:
+Engine получает только:
 
 - текущий resume draft;
 - локаль;
 - массив `vacancyAnalysis.requirements`.
 
-Он не получает `vacancyText`. UI и bootstrap не используют `fetch`, `localStorage` или `sessionStorage`.
+`vacancyText` не передаётся. UI и bootstrap не используют `fetch`, `localStorage` или `sessionStorage`.
 
-Audit report:
+Готовый audit report:
 
 - не записывается в workspace draft;
-- не входит в JSON backup;
+- не входит в workspace JSON backup;
 - не входит в public share payload;
 - не отправляется в serverless API;
-- исчезает после перезагрузки, если пользователь не скачал Markdown/TXT.
+- исчезает после reload, если пользователь не сохранил Markdown/TXT export.
 
 ## Ограничения
 
-Проверка является объяснимым heuristic audit, а не гарантией прохождения конкретной ATS. Она не должна:
+Score — объяснимая локальная эвристика, а не гарантия прохождения конкретной ATS.
+
+Audit не должен:
 
 - придумывать достижения;
-- автоматически переписывать пользовательский текст;
+- автоматически менять пользовательский текст;
 - утверждать наличие missing skills;
 - оценивать личность кандидата;
-- использовать скрытую сетевую модель.
+- обращаться к скрытой сетевой модели.
 
-## Разработка
+## Добавление нового правила
+
+1. Нормализуйте и ограничьте вход.
+2. Добавьте новый stable issue code.
+3. Добавьте RU/EN текст.
+4. Привяжите правило к категории и понятному deduction.
+5. Добавьте unit contract.
+6. Проверьте, что raw vacancy text и report не сериализуются.
+
+Полезные команды:
 
 ```bash
 npm run check
@@ -126,12 +141,3 @@ node --test tests/resume-audit.test.mjs
 npm run test:e2e
 npm run verify
 ```
-
-При добавлении правила:
-
-1. Ограничьте и нормализуйте вход.
-2. Добавьте стабильный issue code.
-3. Добавьте RU/EN copy.
-4. Укажите категорию и объяснимый deduction.
-5. Добавьте unit contract.
-6. Проверьте, что raw vacancy text и report не сериализуются.
