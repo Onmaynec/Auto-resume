@@ -1,166 +1,66 @@
-# ✨ Auto Resume v3.2
+# Auto Resume 3.2 — browser quality branch
 
-> GitHub-профиль превращается в адаптированное, редактируемое и публичное резюме на русском или английском языке.
+Auto Resume превращает GitHub-профиль в редактируемое RU/EN резюме, умеет локально анализировать вакансию, экспортировать результат и работать как PWA. Эта ветка основана на **3.2.0** и добавляет полноценные браузерные quality gates без изменения номера релиза.
 
-## 🗄️ Что нового в v3.2
-
-- общий serverless-кэш через Upstash Redis REST или совместимые Vercel KV переменные;
-- распределённый rate limiting между разными serverless-инстансами;
-- stale-while-revalidate и защита от одновременных одинаковых GitHub GraphQL-запросов;
-- автоматический memory fallback при отсутствии или временном сбое Redis;
-- опциональный denylist для принудительного завершения OAuth-сессий;
-- Redis никогда не получает OAuth-токен, текст вакансии или содержимое резюме.
-
-## 🔄 Что нового в v3.1
-
-- приложение проверяет последний стабильный GitHub Release при запуске, возвращении на вкладку и восстановлении сети;
-- новый Service Worker скачивается в фоне, но перезагрузка выполняется только после нажатия «Обновить сейчас»;
-- уведомление показывает установленную и доступную версии, а также ведёт к release notes;
-- ошибки GitHub API не блокируют запуск, offline-режим или работу с локальными черновиками;
-- после merge в `main` GitHub Actions автоматически проверяет проект, создаёт тег `vX.Y.Z` и публикует GitHub Release;
-- повторный запуск release workflow безопасен: существующие корректные тег и Release не дублируются.
-
-## 🔐 Что нового в v3.0
-
-- опциональный GitHub OAuth-вход через Authorization Code Flow + PKCE S256;
-- минимальный scope `read:user`: приватная/internal статистика вкладов для собственного профиля без доступа к коду;
-- AES-256-GCM encrypted session в `HttpOnly`, `Secure`, `SameSite=Lax` cookie;
-- просмотр статуса сессии, выход и полное отключение с отзывом GitHub grant;
-- отдельный cache partition и `no-store` для authenticated self analytics;
-- гостевой режим, публичные ссылки, PWA и локальные черновики продолжают работать без OAuth.
-
-## 🆕 Что нового
-
-- 📝 **DOCX с настоящим текстовым слоем**: документ открывается для дальнейшего редактирования в Word и LibreOffice.
-- 📋 **Markdown-экспорт**: готовый `.md` с локализованными секциями, ссылками и YAML metadata.
-- 🔗 **Кликабельные ссылки в DOCX** и сохранение пользовательского порядка проектов.
-- 🌍 DOCX и Markdown соответствуют выбранному языку RU/EN.
-- 🔒 Экспорт выполняется полностью в браузере без отправки резюме на сервер и без внешних runtime-зависимостей.
-
-## 🚀 Возможности
+## Возможности 3.2
 
 - анализ публичного GitHub-профиля и репозиториев;
-- contribution heatmap и помесячная история языков;
-- локальный анализ вакансии;
-- сравнение двух профилей;
-- выбор и сортировка проектов;
-- Visual и ATS-шаблоны;
-- экспорт в DOCX, Markdown, TXT и PDF;
-- публичные ссылки;
-- PWA и offline app shell;
-- безопасное автообновление через GitHub Releases;
-- локальные черновики, автосохранение и JSON backup;
-- светлая, тёмная и системная темы;
-- русский и английский интерфейс.
+- опциональный OAuth `read:user` для собственной private/internal contribution statistics;
+- локальный анализ вакансии и сравнение профилей;
+- выбор/сортировка проектов и ручное редактирование резюме;
+- RU/EN интерфейс;
+- DOCX, Markdown, TXT, Visual PDF и ATS PDF;
+- локальные drafts, autosave и JSON backup;
+- публичные read-only ссылки;
+- PWA/offline app shell и обновления через GitHub Releases;
+- Redis/KV cache, distributed rate limiting и optional session denylist.
 
-## 📦 Форматы экспорта
+## Что проверяет эта ветка
 
-| Формат | Назначение | Особенности |
-|---|---|---|
-| DOCX | Редактирование и отправка рекрутеру | Настоящий текст, A4, стили заголовков, кликабельные ссылки, metadata |
-| Markdown | GitHub, портфолио и ручное редактирование | YAML metadata, читаемые секции и ссылки |
-| ATS PDF | Системы подбора персонала | Простой печатный макет с выделяемым текстом |
-| Visual PDF | Презентационная версия | Визуальный макет с диаграммой навыков |
-| TXT | Максимально простой текстовый экспорт | UTF-8, локализованные заголовки |
+Помимо быстрых source/unit checks добавлены два независимых браузерных слоя:
 
-DOCX создаётся модулем `js/docx-export.mjs` как стандартный OOXML ZIP-пакет. Файл не зависит от serverless API и создаётся из текущего отредактированного черновика.
+- Playwright + Chromium для пользовательских сценариев и axe accessibility audits;
+- Lighthouse CI для performance, accessibility, best-practices и SEO budgets.
 
-## 🌐 Архитектура локализации
+Тестовый сервер использует локальные deterministic fixtures и stubs, поэтому проверки не зависят от сторонних CDN и не требуют production credentials.
 
-```text
-index.html
-  └─ data-i18n / data-i18n-placeholder / data-i18n-aria-label
+Подробная схема находится в [`docs/QUALITY.md`](docs/QUALITY.md).
 
-js/i18n.mjs
-  ├─ ru dictionary
-  ├─ en dictionary
-  ├─ t(key, variables, locale)
-  ├─ setLocale(locale)
-  └─ applyTranslations(document)
-```
+## Приватность
 
-### Добавление новой локали
+Текст вакансии, черновики и exports обрабатываются локально. OAuth access token не доступен browser JavaScript и хранится в зашифрованной `HttpOnly`, `Secure`, `SameSite=Lax` cookie.
 
-1. Добавьте код языка в `SUPPORTED_LOCALES`.
-2. Создайте словарь с тем же набором ключей.
-3. Добавьте option в `#localeSelect`.
-4. Запустите `npm run verify`.
+Redis/KV не получает OAuth token, содержимое резюме или текст вакансии. Подробности — в [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md).
 
-## 🔗 Публичные ссылки и черновики
-
-Payload публичной ссылки содержит локаль. Каждый локальный черновик также хранит собственный язык, шаблон и пользовательский текст. JSON backup переносит тему, язык, историю профилей и все черновики.
-
-## ☁️ Развёртывание
-
-Для полной GitHub GraphQL-аналитики добавьте в Vercel:
-
-```text
-GITHUB_TOKEN=ваш_токен
-```
-
-Токен используется только serverless-функцией `api/github.js`. Экспорт DOCX/Markdown работает и без этой переменной.
-
-## 🏷️ Версии, GitHub Releases и автообновление
-
-Версия задаётся в `package.json` и дублируется в `js/version.mjs` и Service Worker. Автоматические тесты и release workflow проверяют их совпадение.
-
-После merge версии в `main` workflow `.github/workflows/release.yml`:
-
-1. запускает `npm run verify`;
-2. проверяет строгий SemVer `X.Y.Z`;
-3. извлекает заметки из секции `## vX.Y.Z` в `CHANGELOG.md`;
-4. создаёт аннотированный тег `vX.Y.Z`;
-5. публикует GitHub Release.
-
-Установленное PWA обращается только к публичному endpoint `releases/latest`. Ответ проверяется, а внешняя ссылка принимается только с домена GitHub и из репозитория `Onmaynec/Auto-resume`. Новый app shell остаётся в состоянии waiting до подтверждения пользователя, поэтому редактирование резюме не прерывается внезапной перезагрузкой.
-
-## 🧱 Redis/KV для production
-
-Для общего кэша и rate limiting между serverless-инстансами задайте:
-
-```text
-UPSTASH_REDIS_REST_URL=https://…upstash.io
-UPSTASH_REDIS_REST_TOKEN=…
-RATE_LIMIT_SECRET=случайная_строка
-```
-
-Также поддерживаются алиасы `KV_REST_API_URL` и `KV_REST_API_TOKEN`. Без этих переменных используется memory fallback. `SESSION_DENYLIST_ENABLED=true` включает распределённое завершение сессий; в Redis записываются только HMAC-хэш идентификатора сессии и время отзыва с TTL.
-
-## 🔑 Настройка GitHub OAuth
-
-1. Создайте GitHub OAuth App.
-2. Укажите callback: `https://ваш-домен/api/auth/callback`.
-3. Добавьте в Vercel переменные из `.env.example`: `GITHUB_OAUTH_CLIENT_ID`, `GITHUB_OAUTH_CLIENT_SECRET`, `GITHUB_CALLBACK_URL` и случайный `SESSION_SECRET` длиной не менее 32 символов.
-4. Выполните новый deployment.
-
-Auto Resume запрашивает только `read:user`. Этот scope добавляет собственные private/internal contributions, но не даёт доступа к коду приватных репозиториев. Токен не попадает в HTML, URL, JavaScript или `localStorage`. Подробности и ограничения описаны в `docs/THREAT_MODEL.md`.
-
-## ▶️ Локальный запуск
+## Локальный запуск
 
 ```bash
 git clone https://github.com/Onmaynec/Auto-resume.git
 cd Auto-resume
-python -m http.server 8080
+npm install
+npx playwright install chromium
+node scripts/test-server.mjs --port=4173 --quality-stubs
 ```
 
-## ✅ Проверка
+## Проверки
 
 ```bash
 npm run verify
+npm run test:e2e
+npm run test:lighthouse
+npm run test:quality
 ```
 
-Проверяются JavaScript-модули, RU/EN словари, ZIP/OOXML-структура DOCX, Unicode, порядок проектов, Markdown, локализованный ATS-экспорт, PWA shell, update lifecycle, release workflow, share payload и `git diff --check`.
+`npm run verify` оставлен быстрым и не запускает Chromium/Lighthouse. Это позволяет сразу отличать ошибки исходников и unit tests от browser-only regressions.
 
-## 🔐 Приватность
+## Развёртывание
 
-- анализируются только публичные данные GitHub;
-- текст вакансии обрабатывается локально;
-- настройки, язык и черновики находятся в браузере;
-- DOCX, Markdown, TXT и PDF формируются локально;
-- `/api/*` не кэшируется Service Worker;
-- проверка Releases не передаёт содержимое резюме;
-- публичное резюме хранится в URL-фрагменте пользователя.
+Для GitHub GraphQL нужен `GITHUB_TOKEN`. OAuth и Redis/KV настраиваются переменными из `.env.example`. Без Redis приложение переходит на memory fallback.
 
-## 📜 Лицензия
+## История версий
+
+Релизная история находится в [`CHANGELOG.md`](CHANGELOG.md). Browser quality gates этой ветки пока не меняют версию 3.2.0.
+
+## Лицензия
 
 MIT © Onmaynec
