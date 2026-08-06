@@ -1,16 +1,18 @@
 # Application Tracker
 
-Auto Resume v3.7 adds a local job-application pipeline next to the existing resume workspace. It is intended for lightweight follow-up planning without a server account, analytics endpoint or external database.
+Application Tracker — локальная воронка откликов внутри Auto Resume. Она нужна для простого учёта вакансий, статусов и follow-up без отдельного аккаунта, внешней базы данных или фоновой синхронизации.
 
-## Data model
+Функция появилась в версии 3.7 и хранится отдельно от черновиков резюме.
 
-The tracker uses a separate versioned key:
+## Хранилище
+
+Tracker использует отдельный versioned key:
 
 ```text
 auto-resume:application-tracker:v1
 ```
 
-Each normalized record contains only allowlisted fields:
+Нормализованная запись выглядит так:
 
 ```json
 {
@@ -31,36 +33,38 @@ Each normalized record contains only allowlisted fields:
 }
 ```
 
-The linked draft is only a reference. Resume content, presentation settings, Application Kit output, audit reports and vacancy text are not copied into the tracker.
+Ссылка на resume draft содержит только ID и имя. Сам текст резюме, presentation settings, Application Kit, Resume Quality Audit и raw vacancy text в Tracker не копируются.
 
-## Stable statuses
+## Статусы
 
-The schema accepts these values:
+Поддерживаются семь значений:
 
-- `saved`
-- `applied`
-- `screening`
-- `interview`
-- `offer`
-- `rejected`
-- `withdrawn`
+- `saved`;
+- `applied`;
+- `screening`;
+- `interview`;
+- `offer`;
+- `rejected`;
+- `withdrawn`.
 
-Unknown values fall back to `saved`. Terminal statuses (`offer`, `rejected`, and `withdrawn`) are excluded from overdue follow-up counts.
+Неизвестное значение после нормализации становится `saved`.
 
-## Follow-up ordering
+`offer`, `rejected` и `withdrawn` считаются terminal statuses и не попадают в счётчик просроченных follow-up.
 
-Records are sorted by actionable state:
+## Follow-up
 
-1. overdue;
-2. due within three days;
-3. scheduled later;
-4. no follow-up date.
+Активные записи сортируются так:
 
-Records in the same group use the follow-up date, update time and company name as deterministic tie breakers. The calculation uses local date values only and performs no background requests.
+1. просроченные;
+2. запланированные на ближайшие три дня;
+3. запланированные позже;
+4. без даты follow-up.
 
-## Import and export
+Если несколько записей находятся в одной группе, используются дата follow-up, `updatedAt` и название компании. Расчёт выполняется локально и не требует фоновых сетевых запросов.
 
-JSON export uses a dedicated envelope:
+## Импорт и экспорт
+
+JSON export имеет собственный envelope:
 
 ```json
 {
@@ -74,55 +78,57 @@ JSON export uses a dedicated envelope:
 }
 ```
 
-Import validates the type and version, normalizes every field, ignores invalid records and merges duplicate IDs by the newest `updatedAt` value.
+При импорте проверяются type и version, затем каждая запись проходит нормализацию. Некорректные записи пропускаются. Если встречаются одинаковые ID, остаётся запись с наиболее новым `updatedAt`.
 
-CSV export quotes every cell and protects against CSV injection. Values beginning with `=`, `+`, `-` or `@` receive a leading apostrophe before serialization.
+CSV export экранирует ячейки и защищает от spreadsheet formula injection: значения, начинающиеся с `=`, `+`, `-` или `@`, получают ведущий апостроф перед сериализацией.
 
-## Input limits
+## Ограничения полей
 
-- up to 120 records;
-- company: 120 characters;
-- role: 160 characters;
-- vacancy URL: 600 characters and HTTPS only;
-- notes: 2,400 characters;
-- draft ID: 180 characters;
-- draft name: 160 characters.
+- максимум 120 записей;
+- company — до 120 символов;
+- role — до 160 символов;
+- vacancy URL — до 600 символов, только HTTPS;
+- notes — до 2 400 символов;
+- draft ID — до 180 символов;
+- draft name — до 160 символов.
 
-Invalid dates and non-HTTPS URLs normalize to an empty value instead of being rendered or opened.
+Некорректная дата или не-HTTPS URL нормализуется в пустое значение вместо того, чтобы попадать в интерфейс как есть.
 
-## Privacy boundary
+## Приватность
 
-Tracker data is stored only in the browser under its dedicated local-storage key. It is not included in:
+Tracker находится только в browser storage под своим ключом и не включается в:
 
-- public resume hashes;
-- workspace draft records;
-- the existing workspace backup;
+- public resume payload;
+- workspace drafts;
+- workspace JSON backup;
 - GitHub profile API requests;
-- OAuth session data;
-- Redis/KV caches;
-- Application Kit output;
-- Resume Quality Audit reports;
-- analytics or logs.
+- OAuth session;
+- Redis/KV;
+- Application Kit;
+- Resume Quality Audit;
+- analytics и server logs.
 
-The tracker panel is removed in public read-only resume mode. Export happens through local `Blob` downloads. The UI module does not call `fetch` and does not use `sessionStorage`.
+В public read-only режиме панель Tracker скрыта. Export создаётся локально через browser `Blob`.
 
-Because the tracker uses browser storage, clearing site data removes it. Users should export the dedicated JSON file before clearing browser storage or moving to another device.
+UI-модуль Tracker не должен выполнять сетевые запросы и не использует `sessionStorage`.
 
-## Offline behavior
+Очистка site data удалит записи. Перед очисткой браузера или переносом на другое устройство нужно сохранить dedicated JSON export.
 
-The engine, UI module and stylesheet are part of the PWA app shell. After the application has loaded once, CRUD, filters, statistics and local export continue to work offline.
+## Offline
 
-## Testing contracts
+Engine, UI и стили Tracker входят в PWA app shell. После первой загрузки без сети остаются доступны CRUD, фильтры, статистика и локальный export.
 
-The release suite verifies:
+## Что проверяют тесты
 
-- bounded deterministic normalization;
-- stable statuses and terminal-state behavior;
-- CRUD and merge semantics;
-- follow-up ordering and statistics;
-- JSON version handling;
-- CSV injection protection;
-- draft references without resume content;
-- absence from share and API modules;
-- Chromium CRUD, filters, downloads and public-link privacy;
-- accessibility and Lighthouse budgets.
+Тесты фиксируют основные контракты:
+
+- нормализацию и лимиты полей;
+- статусы и terminal-state behavior;
+- CRUD и merge по `updatedAt`;
+- порядок follow-up и статистику;
+- обработку версии JSON;
+- защиту CSV export;
+- связь с draft без копирования содержимого резюме;
+- отсутствие Tracker data в public share и API;
+- browser flows, downloads и public-mode privacy;
+- accessibility и Lighthouse budgets.
