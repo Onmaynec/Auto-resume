@@ -1,167 +1,44 @@
-# ✨ Auto Resume v3.3
+# Auto Resume 3.3
 
-> GitHub-профиль превращается в адаптированное, редактируемое и публичное резюме на русском или английском языке.
+Auto Resume собирает данные GitHub-профиля в редактируемое RU/EN резюме. Версия 3.3 отделяет содержимое резюме от его оформления: визуальный шаблон можно менять, не затрагивая текст и не ломая текстовые exports.
 
-## 🎨 Что нового в v3.3
-
-- versioned presentation schema с безопасным fallback для старых черновиков и публичных ссылок;
-- независимые renderers для `visual-classic`, `visual-studio`, `visual-minimal` и `ats-basic`;
-- настройка системного шрифта, плотности, отступов секций и акцентного цвета;
-- автоматическая проверка контраста акцента по WCAG AA;
-- локальный custom logo через `URL.createObjectURL()` без загрузки на сервер;
-- логотип не попадает в черновики, backup или публичную ссылку;
-- data-only template catalog без пользовательского JavaScript, HTML и внешнего CSS;
-- миграция старых workspace/public payload и безопасный fallback неизвестных template ID;
-- browser contract-тесты всех встроенных тем и сохранения presentation metadata.
-
-Подробная схема и правила расширения описаны в [`docs/TEMPLATES.md`](docs/TEMPLATES.md).
-
-## 🗄️ Что нового в v3.2
-
-- общий serverless-кэш через Upstash Redis REST или совместимые Vercel KV переменные;
-- распределённый rate limiting между разными serverless-инстансами;
-- stale-while-revalidate и защита от одновременных одинаковых GitHub GraphQL-запросов;
-- автоматический memory fallback при отсутствии или временном сбое Redis;
-- опциональный denylist для принудительного завершения OAuth-сессий;
-- Redis никогда не получает OAuth-токен, текст вакансии или содержимое резюме.
-
-## 🔄 Что нового в v3.1
-
-- приложение проверяет последний стабильный GitHub Release при запуске, возвращении на вкладку и восстановлении сети;
-- новый Service Worker скачивается в фоне, но перезагрузка выполняется только после нажатия «Обновить сейчас»;
-- уведомление показывает установленную и доступную версии, а также ведёт к release notes;
-- ошибки GitHub API не блокируют запуск, offline-режим или работу с локальными черновиками;
-- после merge в `main` GitHub Actions автоматически проверяет проект, создаёт тег `vX.Y.Z` и публикует GitHub Release;
-- повторный запуск release workflow безопасен: существующие корректные тег и Release не дублируются.
-
-## 🔐 Что нового в v3.0
-
-- опциональный GitHub OAuth-вход через Authorization Code Flow + PKCE S256;
-- минимальный scope `read:user`: приватная/internal статистика вкладов для собственного профиля без доступа к коду;
-- AES-256-GCM encrypted session в `HttpOnly`, `Secure`, `SameSite=Lax` cookie;
-- просмотр статуса сессии, выход и полное отключение с отзывом GitHub grant;
-- отдельный cache partition и `no-store` для authenticated self analytics;
-- гостевой режим, публичные ссылки, PWA и локальные черновики продолжают работать без OAuth.
-
-## 🚀 Возможности
+## Основные возможности
 
 - анализ публичного GitHub-профиля и репозиториев;
-- contribution heatmap и помесячная история языков;
-- локальный анализ вакансии;
-- сравнение двух профилей;
-- выбор и сортировка проектов;
-- три visual-темы и отдельный ATS renderer;
-- безопасное локальное брендирование резюме;
-- экспорт в DOCX, Markdown, TXT и PDF;
-- публичные ссылки;
-- PWA и offline app shell;
-- безопасное автообновление через GitHub Releases;
-- локальные черновики, автосохранение и JSON backup;
-- светлая, тёмная и системная темы;
-- русский и английский интерфейс.
+- опциональный OAuth `read:user` для собственной contribution statistics;
+- локальный анализ вакансии и сравнение профилей;
+- выбор проектов и ручное редактирование;
+- RU/EN интерфейс;
+- DOCX, Markdown, TXT, Visual PDF и ATS PDF;
+- drafts, autosave, JSON backup и публичные read-only ссылки;
+- PWA/offline app shell и контролируемое автообновление;
+- Redis/KV cache, distributed rate limiting и optional session denylist;
+- Playwright/axe и Lighthouse quality gates.
 
-## 🎛️ Шаблоны и брендирование
+## Шаблоны 3.3
 
-Контент резюме и presentation schema разделены. DOCX, Markdown и TXT не зависят от visual-темы. Черновик и публичная ссылка сохраняют только allowlisted поля:
+Встроены четыре template ID:
 
-```json
-{
-  "schemaVersion": 1,
-  "templateId": "visual-studio",
-  "templateVersion": 1,
-  "visualTemplateId": "visual-studio",
-  "accent": "#0f766e",
-  "font": "inter",
-  "density": "comfortable",
-  "spacing": "normal"
-}
-```
+- `visual-classic`;
+- `visual-studio`;
+- `visual-minimal`;
+- `ats-basic`.
 
-Неизвестный или слишком новый template ID автоматически заменяется на `visual-classic` или `ats-basic`. Пользовательский логотип живёт только как временный `blob:` URL в текущей вкладке и никогда не сериализуется.
+Presentation settings хранятся отдельно от resume content. Схема содержит версию, template ID/version, акцент, системный шрифт, плотность и интервалы. Неизвестные или несовместимые значения переходят на безопасный fallback.
 
-## 📦 Форматы экспорта
+Custom logo выбирается локально и отображается через временный `blob:` URL. Он не попадает в drafts, backup или public share.
 
-| Формат | Назначение | Особенности |
-|---|---|---|
-| DOCX | Редактирование и отправка рекрутеру | Настоящий текст, A4, стили заголовков, кликабельные ссылки, metadata |
-| Markdown | GitHub, портфолио и ручное редактирование | YAML metadata, читаемые секции и ссылки |
-| ATS PDF | Системы подбора персонала | Простой печатный макет с выделяемым текстом |
-| Visual PDF | Презентационная версия | Выбранная visual-тема, брендирование и диаграмма навыков |
-| TXT | Максимально простой текстовый экспорт | UTF-8, локализованные заголовки |
+Template catalog принимает только data definitions и не исполняет сторонний JavaScript/HTML/CSS. Новый renderer всё равно требует обычного изменения исходного кода.
 
-DOCX создаётся модулем `js/docx-export.mjs` как стандартный OOXML ZIP-пакет. Файл не зависит от serverless API и создаётся из текущего отредактированного черновика.
+Подробности: [`docs/TEMPLATES.md`](docs/TEMPLATES.md).
 
-## 🌐 Архитектура локализации
+## Приватность и OAuth
 
-```text
-index.html
-  └─ data-i18n / data-i18n-placeholder / data-i18n-aria-label
+Текст вакансии и содержимое резюме не отправляются в Redis/KV. OAuth access token хранится в зашифрованной `HttpOnly`, `Secure`, `SameSite=Lax` cookie и не доступен browser JavaScript.
 
-js/i18n.mjs
-  ├─ ru dictionary
-  ├─ en dictionary
-  ├─ t(key, variables, locale)
-  ├─ setLocale(locale)
-  └─ applyTranslations(document)
-```
+Модель угроз: [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md).
 
-### Добавление новой локали
-
-1. Добавьте код языка в `SUPPORTED_LOCALES`.
-2. Создайте словарь с тем же набором ключей.
-3. Добавьте option в `#localeSelect`.
-4. Запустите `npm run verify`.
-
-## 🔗 Публичные ссылки и черновики
-
-Payload публичной ссылки v4 содержит локаль и совместимую presentation schema. Старые payload v2/v3 открываются через миграцию. Каждый локальный черновик также хранит собственный язык, шаблон и пользовательский текст. JSON backup переносит тему, язык, историю профилей и все черновики.
-
-## ☁️ Развёртывание
-
-Для полной GitHub GraphQL-аналитики добавьте в Vercel:
-
-```text
-GITHUB_TOKEN=ваш_токен
-```
-
-Токен используется только serverless-функцией `api/github.js`. Экспорт DOCX/Markdown работает и без этой переменной.
-
-## 🏷️ Версии, GitHub Releases и автообновление
-
-Версия задаётся в `package.json` и дублируется в `js/version.mjs` и Service Worker. Runtime metadata страницы синхронизируется из `js/version.mjs`. Автоматические тесты и release workflow проверяют совпадение версий.
-
-После merge версии в `main` workflow `.github/workflows/release.yml`:
-
-1. запускает `npm run verify`;
-2. проверяет строгий SemVer `X.Y.Z`;
-3. извлекает заметки из секции `## vX.Y.Z` в `CHANGELOG.md`;
-4. создаёт аннотированный тег `vX.Y.Z`;
-5. публикует GitHub Release.
-
-Установленное PWA обращается только к публичному endpoint `releases/latest`. Ответ проверяется, а внешняя ссылка принимается только с домена GitHub и из репозитория `Onmaynec/Auto-resume`. Новый app shell остаётся в состоянии waiting до подтверждения пользователя, поэтому редактирование резюме не прерывается внезапной перезагрузкой.
-
-## 🧱 Redis/KV для production
-
-Для общего кэша и rate limiting между serverless-инстансами задайте:
-
-```text
-UPSTASH_REDIS_REST_URL=https://…upstash.io
-UPSTASH_REDIS_REST_TOKEN=…
-RATE_LIMIT_SECRET=случайная_строка
-```
-
-Также поддерживаются алиасы `KV_REST_API_URL` и `KV_REST_API_TOKEN`. Без этих переменных используется memory fallback. `SESSION_DENYLIST_ENABLED=true` включает распределённое завершение сессий; в Redis записываются только HMAC-хэш идентификатора сессии и время отзыва с TTL.
-
-## 🔑 Настройка GitHub OAuth
-
-1. Создайте GitHub OAuth App.
-2. Укажите callback: `https://ваш-домен/api/auth/callback`.
-3. Добавьте в Vercel переменные из `.env.example`: `GITHUB_OAUTH_CLIENT_ID`, `GITHUB_OAUTH_CLIENT_SECRET`, `GITHUB_CALLBACK_URL` и случайный `SESSION_SECRET` длиной не менее 32 символов.
-4. Выполните новый deployment.
-
-Auto Resume запрашивает только `read:user`. Этот scope добавляет собственные private/internal contributions, но не даёт доступа к коду приватных репозиториев. Токен не попадает в HTML, URL, JavaScript или `localStorage`. Подробности и ограничения описаны в `docs/THREAT_MODEL.md`.
-
-## ▶️ Локальный запуск
+## Локальный запуск
 
 ```bash
 git clone https://github.com/Onmaynec/Auto-resume.git
@@ -171,7 +48,7 @@ npx playwright install chromium
 node scripts/test-server.mjs --port=4173 --quality-stubs
 ```
 
-## ✅ Проверка
+## Проверка
 
 ```bash
 npm run verify
@@ -179,19 +56,12 @@ npm run test:e2e
 npm run test:lighthouse
 ```
 
-Проверяются JavaScript-модули, RU/EN словари, ZIP/OOXML-структура DOCX, presentation schema, миграции черновиков и публичных ссылок, renderer contracts, PWA shell, update lifecycle, browser flows, accessibility и Lighthouse budgets.
+Browser quality workflow описан в [`docs/QUALITY.md`](docs/QUALITY.md).
 
-## 🔐 Приватность
+## История версий
 
-- анализируются только публичные данные GitHub;
-- текст вакансии обрабатывается локально;
-- настройки, язык и черновики находятся в браузере;
-- custom logo остаётся временным object URL текущей вкладки;
-- DOCX, Markdown, TXT и PDF формируются локально;
-- `/api/*` не кэшируется Service Worker;
-- проверка Releases не передаёт содержимое резюме;
-- публичное резюме хранится в URL-фрагменте пользователя.
+Список релизных изменений находится в [`CHANGELOG.md`](CHANGELOG.md).
 
-## 📜 Лицензия
+## Лицензия
 
 MIT © Onmaynec
