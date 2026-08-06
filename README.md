@@ -1,340 +1,60 @@
-# ✨ Auto Resume v3.8
+# Auto Resume 3.8
 
-> GitHub-профиль превращается в адаптированное резюме, локальный пакет отклика, объяснимый ATS-аудит, приватную воронку и пространство подготовки к интервью на русском или английском языке.
+Auto Resume собирает GitHub-профиль в редактируемое RU/EN резюме и помогает пройти путь от анализа вакансии до подготовки к интервью. Версия 3.8 добавляет **Interview Prep Lab** рядом с локальным Application Tracker.
 
-## 🎤 Что нового в v3.8
+## Возможности
 
-- добавлен полностью локальный **Interview Prep Lab** рядом с Application Tracker;
-- сессия связывается с откликом только через application ID, company и role;
-- RU/EN вопросы детерминированно строятся из matched skill names, missing skill names и публичных project names;
-- доступны категории `intro`, `technical`, `project`, `behavioral`, `gap` и `candidate`;
-- ответы редактируются локально, поддерживаются completion state и self-rating 0–5;
-- добавлен банк STAR-историй с situation, task, action и result;
-- readiness score 0–100 объясняется answer coverage, confidence, STAR evidence и interview planning;
-- поддерживаются versioned JSON import/export и локальный Markdown export;
-- исходный vacancy text, resume content, Application Kit и audit report в prep schema не входят;
-- prep data не входит в public share, workspace backup, API, Redis/KV или analytics;
-- public read-only resume не показывает Interview Prep panel;
-- engine, UI и CSS входят в offline PWA app shell;
-- добавлены unit, privacy contract и Chromium/axe tests.
+- GitHub profile/repository analysis и optional OAuth `read:user`;
+- local vacancy matching;
+- Application Kit;
+- explainable Resume Quality Audit;
+- Application Tracker;
+- Interview Prep Lab;
+- visual/ATS templates и local custom logo;
+- DOCX, Markdown, TXT и PDF exports;
+- drafts, autosave, JSON backup, public read-only links;
+- PWA/offline shell, Redis/KV cache/rate limiting;
+- governance, Playwright/axe/Lighthouse checks.
 
-Схема, readiness model и privacy boundary описаны в [`docs/INTERVIEW_PREP.md`](docs/INTERVIEW_PREP.md).
+## Interview Prep Lab
 
-## 🗂️ Что нового в v3.7
-
-- добавлен полностью локальный **Application Tracker** рядом с workspace;
-- записи содержат компанию, роль, HTTPS-ссылку, статус, дату отклика, follow-up, заметки и optional draft reference;
-- доступны этапы `saved`, `applied`, `screening`, `interview`, `offer`, `rejected` и `withdrawn`;
-- просроченные и ближайшие follow-up автоматически поднимаются вверх;
-- есть поиск, фильтры, статистика и быстрое изменение статуса;
-- связь с резюме хранит только ID и название черновика, а не его содержимое;
-- поддерживаются versioned JSON import/export и защищённый CSV export;
-- tracker data не входит в public share, workspace backup, API, Redis/KV или analytics;
-- public read-only resume не показывает tracker panel;
-- engine, UI и CSS входят в offline PWA app shell;
-- добавлены unit, privacy contract и Chromium/axe tests.
-
-Схема, import/export и privacy boundary описаны в [`docs/APPLICATION_TRACKER.md`](docs/APPLICATION_TRACKER.md).
-
-## 🔎 Что нового в v3.6
-
-- после генерации резюме появляется локальная панель **Resume Quality Audit**;
-- итоговый score 0–100 объясняется категориями completeness, evidence, ATS readiness и readability;
-- проверяются headline, контакты, summary, навыки, проекты, HTTPS-ссылки, метрики, глаголы действия и повторяемость;
-- vacancy matching использует только извлечённые названия требований, а не исходный текст вакансии;
-- стабильные issue codes объясняют каждый deduction;
-- отчёт пересчитывается после редактирования, но никогда не изменяет резюме автоматически;
-- отчёт копируется и локально экспортируется в Markdown/TXT;
-- audit report не входит в drafts, backup, public share, API или analytics.
-
-Подробности: [`docs/RESUME_AUDIT.md`](docs/RESUME_AUDIT.md).
-
-## 📬 Что нового в v3.5
-
-- локальный RU/EN Application Kit после анализа вакансии;
-- cover letter, evidence prompts, gap plan и вопросы для интервью;
-- варианты тона `concise`, `balanced` и `detailed`;
-- редактирование, clipboard и Markdown/TXT export;
-- missing skills не выдаются за имеющийся опыт;
-- исходный vacancy text не сохраняется и не отправляется на сервер.
-
-Подробности: [`docs/APPLICATION_KIT.md`](docs/APPLICATION_KIT.md).
-
-## 🚀 Возможности
-
-- анализ публичного GitHub-профиля и репозиториев;
-- contribution heatmap и история языков;
-- опциональный OAuth `read:user` для собственных private/internal contributions;
-- локальный анализ требований вакансии;
-- локальный Application Kit;
-- локальный Resume Quality Audit;
-- локальный Application Tracker;
-- локальный Interview Prep Lab;
-- сравнение GitHub-профилей;
-- выбор и сортировка проектов;
-- редактируемые RU/EN резюме;
-- visual-шаблоны и ATS renderer;
-- локальный custom logo без загрузки;
-- DOCX, Markdown, TXT, Visual PDF и ATS PDF;
-- публичные read-only ссылки;
-- PWA, offline app shell и безопасное автообновление;
-- локальные drafts, autosave и JSON backup;
-- light, dark и system themes.
-
-## 🎤 Interview Prep Lab
-
-Prep Lab использует отдельный versioned storage key:
+Prep session хранится отдельно в:
 
 ```text
 auto-resume:interview-prep:v1
 ```
 
-Сессия содержит только allowlisted структурированные данные:
+Сессия содержит компанию, роль, локаль, дату интервью, небольшую reference на Application Tracker, skill/project/gap names, вопросы, ответы и STAR stories.
 
-```json
-{
-  "company": "Acme",
-  "role": "Frontend Engineer",
-  "locale": "ru",
-  "interviewDate": "2026-08-12",
-  "application": {
-    "id": "application-id",
-    "company": "Acme",
-    "role": "Frontend Engineer"
-  },
-  "skills": ["JavaScript", "Accessibility"],
-  "projects": ["resume-engine"],
-  "gaps": ["Kubernetes"],
-  "questions": [],
-  "stories": []
-}
-```
+Связь с Tracker ограничена `application id`, `company` и `role`. Notes, vacancy URL и полный tracker record не копируются.
 
-Связь с откликом хранит только ID, компанию и роль. Notes, vacancy URL и полный tracker record не копируются.
+Вопросы детерминированно строятся по категориям `intro`, `technical`, `project`, `behavioral`, `gap`, `candidate`. Генератор получает normalized skill names, missing-skill names и public project names, но не raw vacancy text или resume content.
 
-Генератор получает только подтверждённые или введённые пользователем skill names, отдельные missing skill names и публичные project names. Исходный текст вакансии и содержимое резюме не передаются. Missing skills создают честные gap-вопросы и не становятся заявлением об опыте.
+Ответы имеют completion state и self-rating 0–5. STAR bank хранит situation, task, action и result.
 
-Readiness score является локальной эвристикой:
+Readiness score 0–100 — локальная эвристика: answer coverage 45, self-rating confidence 25, complete STAR evidence 20 и interview planning 10. Это не прогноз найма.
 
-| Компонент | Максимум |
-|---|---:|
-| Answer coverage | 45 |
-| Self-rating confidence | 25 |
-| Complete STAR evidence | 20 |
-| Interview planning | 10 |
+Prep data не входит в workspace backup, public share, API, Redis/KV или analytics. Public read-only resumes не показывают Prep panel.
 
-STAR-история считается полной только при заполненных situation, task, action и result. Score не является прогнозом найма.
+Подробности: [`docs/INTERVIEW_PREP.md`](docs/INTERVIEW_PREP.md).
 
-Dedicated JSON export переносит versioned prep schema. Markdown export содержит вопросы, ответы, self-ratings, STAR-истории и application ID. Все файлы создаются через browser Blob без загрузки на сервер.
+## Остальные локальные инструменты
 
-## 🗂️ Application Tracker
+Tracker хранится отдельно и не копирует resume content. Application Kit и Audit остаются ephemeral. Их boundaries описаны в [`docs/APPLICATION_TRACKER.md`](docs/APPLICATION_TRACKER.md), [`docs/APPLICATION_KIT.md`](docs/APPLICATION_KIT.md) и [`docs/RESUME_AUDIT.md`](docs/RESUME_AUDIT.md).
 
-Tracker использует отдельный versioned storage key:
-
-```text
-auto-resume:application-tracker:v1
-```
-
-Запись содержит только allowlisted поля:
-
-```json
-{
-  "company": "Acme",
-  "role": "Frontend Developer",
-  "vacancyUrl": "https://jobs.example.com/frontend",
-  "status": "applied",
-  "appliedDate": "2026-08-01",
-  "followUpDate": "2026-08-04",
-  "notes": "Send portfolio link.",
-  "draft": {
-    "id": "octocat-1785663600000",
-    "name": "Frontend Developer — Acme"
-  }
-}
-```
-
-Черновик связан ссылкой по ID и имени. Resume content, presentation metadata, Application Kit, audit report и исходный vacancy text в запись не копируются.
-
-Follow-up сортируются в порядке: overdue → ближайшие три дня → позднее → без даты. Terminal statuses не считаются просроченными.
-
-JSON import нормализует данные и объединяет duplicate IDs по наиболее новому `updatedAt`. CSV export защищён от spreadsheet formula injection.
-
-## 🔎 Resume Quality Audit
-
-Audit engine получает только текущий resume draft, локаль и массив `vacancyAnalysis.requirements`.
-
-```json
-{
-  "schemaVersion": 1,
-  "locale": "ru",
-  "score": 82,
-  "grade": "good",
-  "categories": {
-    "completeness": { "score": 23, "max": 25 },
-    "evidence": { "score": 19, "max": 25 },
-    "ats": { "score": 20, "max": 25 },
-    "readability": { "score": 20, "max": 25 }
-  },
-  "issues": [
-    {
-      "code": "METRICS_MISSING",
-      "severity": "info",
-      "category": "evidence"
-    }
-  ]
-}
-```
-
-Проверка является объяснимой эвристикой, а не гарантией прохождения конкретной ATS. Она не придумывает достижения, не переписывает текст и не утверждает наличие отсутствующих навыков.
-
-## 📬 Application Kit
-
-После vacancy analysis приложение строит пакет из структурированного результата:
-
-- cover letter;
-- project evidence prompts;
-- honest gap plan;
-- interview questions;
-- локальный Markdown/TXT export.
-
-Исходный текст вакансии не передаётся генератору пакета. UI не использует `fetch`, `localStorage` или `sessionStorage`.
-
-## 🎨 Шаблоны и брендирование
-
-Presentation schema отделена от контента резюме:
-
-```json
-{
-  "schemaVersion": 1,
-  "templateId": "visual-studio",
-  "templateVersion": 1,
-  "visualTemplateId": "visual-studio",
-  "accent": "#0f766e",
-  "font": "inter",
-  "density": "comfortable",
-  "spacing": "normal"
-}
-```
-
-Встроены `visual-classic`, `visual-studio`, `visual-minimal` и `ats-basic`. Неизвестный template ID заменяется безопасным fallback. Custom logo живёт только как временный `blob:` URL и не сериализуется.
-
-Подробности: [`docs/TEMPLATES.md`](docs/TEMPLATES.md).
-
-## 📦 Экспорт
-
-| Формат | Назначение | Особенности |
-|---|---|---|
-| DOCX | Редактирование и отправка | OOXML, A4, Unicode, стили и кликабельные ссылки |
-| Markdown | GitHub и ручное редактирование | Читаемые секции и metadata |
-| TXT | Максимальная совместимость | UTF-8 |
-| ATS PDF | Системы подбора | Простой макет с выделяемым текстом |
-| Visual PDF | Презентационная версия | Выбранная visual-тема |
-| Application Kit Markdown/TXT | Отклик и интервью | Локальный редактируемый текст |
-| Audit Markdown/TXT | Проверка перед отправкой | Score, категории и issue codes |
-| Tracker JSON/CSV | Перенос и анализ воронки | Versioned import и CSV injection protection |
-| Interview Prep Markdown/JSON | Репетиция и перенос | Ответы, readiness и STAR без raw vacancy text |
-
-## 🔗 Черновики и публичные ссылки
-
-Workspace хранит локаль, безопасную presentation schema и редактируемый resume draft. JSON backup переносит drafts, preferences и историю профилей.
-
-Application Kit и Resume Quality Audit намеренно не входят в workspace, backup, public share payload, serverless API, Redis/KV или analytics.
-
-Application Tracker и Interview Prep Lab хранятся отдельно. Их dedicated JSON exports нужно сохранить перед очисткой site data или переносом на другое устройство.
-
-Public resume payload остаётся read-only и не показывает audit, tracker или interview prep panels.
-
-## 🔐 OAuth и API
-
-OAuth использует Authorization Code Flow + PKCE S256 и минимальный scope `read:user`.
-
-- OAuth token находится только в AES-256-GCM encrypted `HttpOnly`, `Secure`, `SameSite=Lax` cookie;
-- browser JavaScript не получает token;
-- private repository code недоступен;
-- authenticated self analytics отделена от public cache;
-- `/api/*` не кэшируется Service Worker.
-
-Модель угроз: [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md).
-
-## 🧱 Redis/KV
-
-Для общего production cache и rate limiting:
-
-```text
-UPSTASH_REDIS_REST_URL=https://…upstash.io
-UPSTASH_REDIS_REST_TOKEN=…
-RATE_LIMIT_SECRET=случайная_строка
-```
-
-Поддерживаются `KV_REST_API_URL` и `KV_REST_API_TOKEN`. Без переменных используется memory fallback. OAuth tokens, vacancy text, resume content, tracker data и interview prep data в Redis не записываются.
-
-## ☁️ Развёртывание
-
-Минимальная GitHub GraphQL конфигурация:
-
-```text
-GITHUB_TOKEN=ваш_токен
-```
-
-Для OAuth добавьте переменные из `.env.example`:
-
-```text
-GITHUB_OAUTH_CLIENT_ID=…
-GITHUB_OAUTH_CLIENT_SECRET=…
-GITHUB_CALLBACK_URL=https://ваш-домен/api/auth/callback
-SESSION_SECRET=случайная_строка_не_короче_32_символов
-```
-
-## 🏷️ Релизы и автообновление
-
-Версия синхронизируется между `package.json`, `js/version.mjs`, `sw.js` и `CHANGELOG.md`.
-
-После merge в `main` workflow `.github/workflows/release.yml` запускает verification, проверяет SemVer, создаёт тег `vX.Y.Z` и публикует GitHub Release. PWA загружает новый app shell в фоне и применяет его только после подтверждения пользователя.
-
-## ▶️ Локальный запуск
+## Запуск и проверка
 
 ```bash
 git clone https://github.com/Onmaynec/Auto-resume.git
 cd Auto-resume
-npm install
+npm install --ignore-scripts --no-audit --no-fund
 npx playwright install chromium
 node scripts/test-server.mjs --port=4173 --quality-stubs
-```
-
-## ✅ Проверка
-
-```bash
-npm run check
-npm run docs:check
-npm test
+npm run verify
 npm run test:e2e
 npm run test:lighthouse
-npm run verify
 ```
 
-Проверяются source syntax, RU/EN contracts, OAuth, Redis/KV, exports, PWA lifecycle, templates, Application Kit, Resume Quality Audit, Application Tracker, Interview Prep Lab, privacy boundaries, Chromium/axe и Lighthouse budgets.
-
-## 🤝 Участие и безопасность
-
-Перед изменениями прочитайте:
-
-- [`CONTRIBUTING.md`](CONTRIBUTING.md)
-- [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)
-- [`SECURITY.md`](SECURITY.md)
-
-Не публикуйте tokens, cookies, client secrets, Redis credentials, private repository data или конфиденциальное содержимое резюме. Уязвимости сообщаются через private GitHub Security Advisory.
-
-## 🔐 Приватность
-
-- GitHub profile analysis использует разрешённые публичные данные;
-- vacancy text обрабатывается локально;
-- drafts, preferences, tracker и interview prep находятся в браузере;
-- custom logo не загружается;
-- Application Kit и audit report живут в памяти вкладки;
-- exports создаются локально;
-- public resume хранится в URL fragment;
-- serverless API не получает содержимое резюме, вакансии, tracker records или prep sessions.
-
-## 📜 Лицензия
+## Лицензия
 
 MIT © Onmaynec
