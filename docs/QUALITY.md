@@ -1,92 +1,48 @@
 # Browser quality workflow
 
-Auto Resume keeps fast source and unit checks separate from browser-heavy validation. Pull requests run three independent CI jobs so a failure immediately identifies whether the regression is in source/unit tests, a user flow, or a Lighthouse budget.
+Auto Resume keeps fast source/unit/documentation checks separate from browser-heavy validation so CI failures point to the right layer.
 
-## Local setup
-
-Use Node.js 24, matching CI.
+## Commands
 
 ```bash
 npm install
 npx playwright install chromium
-```
-
-Run the existing fast checks:
-
-```bash
 npm run verify
-```
-
-Run Chromium E2E and axe audits:
-
-```bash
+npm run docs:check
 npm run test:e2e
-```
-
-Run Lighthouse CI:
-
-```bash
 npm run test:lighthouse
 ```
 
-Run both browser suites sequentially:
+Playwright uses `scripts/test-server.mjs` with deterministic local fixtures and stubs. Production OAuth credentials, private repository data, raw vacancy text and real resume/tracker/prep content are not test fixtures.
 
-```bash
-npm run test:quality
-```
+## Chromium coverage
 
-Playwright starts `scripts/test-server.mjs` automatically. Lighthouse starts a separate instance on port 4174. The server uses repository files directly and supplies deterministic local stubs for Chart.js, html2canvas, jsPDF and Google Fonts, so browser checks do not depend on third-party CDN availability.
+Browser scenarios cover:
 
-## Covered scenarios
+- profile loading and vacancy matching;
+- resume generation/editing and exports;
+- profile comparison, drafts and public read-only links;
+- OAuth success/failure/logout;
+- Service Worker install, offline navigation and update behavior;
+- template rendering/persistence;
+- Application Kit generation/export/privacy;
+- Resume Quality Audit recalculation/export/privacy;
+- Application Tracker CRUD, follow-up, JSON/CSV and public-link hiding;
+- Interview Prep questions, answers, STAR stories, readiness, import/export and Tracker-reference boundary.
 
-The Chromium suite validates:
-
-- GitHub username → mocked profile → vacancy matching → resume generation;
-- real browser downloads for DOCX and Markdown;
-- Visual PDF generation and ATS print flow;
-- profile comparison;
-- automatic local draft creation;
-- read-only public resume links;
-- Service Worker installation and offline app-shell reload;
-- OAuth success, denied callback, invalid state, logout and expired-session behavior;
-- axe checks for the landing page, generated dashboard/editor and OAuth consent dialog.
-
-GitHub endpoints are fulfilled with fixed fixtures. OAuth cookies, access tokens, private repository data and real user resume content are never used. The mocks intentionally expose only the documented `read:user` capability and explicitly mark private repository code as unavailable.
+Axe audits key application states.
 
 ## Lighthouse budgets
 
-`lighthouserc.cjs` enforces these minimum scores on the deterministic desktop shell:
-
 | Category | Minimum |
-|---|---:|
+| --- | ---: |
 | Performance | 70 |
 | Accessibility | 95 |
 | Best Practices | 90 |
 | SEO | 90 |
 
-Current Lighthouse versions no longer expose the former installable-manifest and service-worker audits as stable assertion IDs. Manifest structure is covered by existing unit tests, while real Service Worker installation and offline reload are verified in Chromium by Playwright.
+Manifest structure stays in unit tests; real Service Worker behavior is checked in Chromium.
 
-## CI artifacts
+## Failure artifacts
 
-Playwright retains screenshots, traces, videos and the HTML report only after failure. Lighthouse stores its HTML/JSON output only after failure. GitHub Actions uploads both artifact groups for seven days and uses at most one retry for browser tests.
-
-Local output is written to:
-
-```text
-artifacts/playwright-report/
-artifacts/lighthouse/
-test-results/playwright/
-```
-
-These directories are ignored by Git.
-
-## Adding a browser scenario
-
-1. Reuse `tests/e2e/support.mjs` for profile and auth fixtures.
-2. Intercept any new API endpoint with a fixed response; never add production credentials.
-3. Prefer role, label or stable ID locators over CSS structure.
-4. Assert a user-visible outcome, downloaded filename or persisted browser state.
-5. Keep retries disabled locally and limited to one attempt in CI.
-6. Run `npm run verify` and the relevant browser command before opening a PR.
-
-When adding a new external runtime script to `index.html`, also add a deterministic quality stub in `scripts/test-server.mjs`. This keeps E2E and Lighthouse results reproducible while production continues to load the real library.
+Screenshots, traces, videos and reports are retained only after failed CI runs. New scenarios should use synthetic data, semantic locators and assert both user-visible behavior and the relevant privacy boundary.
