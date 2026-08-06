@@ -1,48 +1,39 @@
-# Auto Resume v3.0 Threat Model
+# Auto Resume 3.3 threat model
 
-## Assets
+Auto Resume 3.3 combines GitHub OAuth, optional Redis/KV infrastructure and a data-driven template system. Browser-only resume content remains separate from authentication and server-side caching.
 
-- GitHub OAuth access token;
-- encrypted OAuth session cookie;
+## Protected assets
+
+- GitHub OAuth access token and encrypted session cookie;
 - PKCE verifier and OAuth `state`;
-- user identity and private contribution statistics;
-- server-side OAuth client secret and session encryption secret.
+- OAuth client secret and `SESSION_SECRET`;
+- authenticated user identity/private contribution statistics;
+- local resume drafts and public-link payloads;
+- template/presentation data accepted by the renderer.
 
-## Trust boundaries
+## Main boundaries
 
-1. Browser ↔ Auto Resume serverless API over HTTPS.
-2. Auto Resume serverless API ↔ GitHub OAuth and API endpoints.
-3. Public profile analytics ↔ authenticated self analytics.
-4. Local drafts/public links ↔ OAuth session. These subsystems remain independent.
+1. Browser ↔ serverless API over HTTPS.
+2. Serverless API ↔ GitHub OAuth/API.
+3. Public profile cache ↔ authenticated-self cache.
+4. Browser-only resume/presentation data ↔ OAuth/session subsystem.
+5. Serverless instances ↔ optional Redis/KV backend.
+6. Template definitions ↔ reviewed renderer code.
 
-## Implemented controls
+## Controls
 
-- Authorization Code Flow with PKCE S256.
-- Unpredictable `state`, checked with a timing-safe comparison.
-- OAuth token is encrypted with AES-256-GCM inside an `HttpOnly`, `Secure`, `SameSite=Lax` cookie.
-- Browser JavaScript receives only a sanitized session summary; the token is never returned.
-- OAuth scope is limited to `read:user`. Auto Resume cannot read private repository code.
-- Authenticated self responses use a separate cache partition and `private, no-store` response headers.
-- Logout clears the cookie; disconnect revokes the GitHub app grant.
-- Session mutation requires a same-origin request and is excluded from the Service Worker cache.
-- Callback errors use stable codes and never log access tokens, authorization codes or cookies.
+OAuth uses Authorization Code Flow with PKCE S256, unpredictable `state`, `read:user` only and an AES-256-GCM encrypted `HttpOnly`, `Secure`, `SameSite=Lax` session cookie. Browser JavaScript never receives the access token.
 
-## Known limitations
+Authenticated responses use a separate cache namespace and `private, no-store`. `/api/*` is excluded from Service Worker caching. Logout clears the cookie and disconnect revokes the GitHub grant.
 
-- Stateless encrypted cookies cannot be centrally revoked before expiration without rotating `SESSION_SECRET`; disconnect uses GitHub grant revocation to invalidate the token.
-- A stolen valid cookie can be replayed until expiration. HTTPS, HttpOnly, SameSite and an eight-hour TTL reduce this risk.
-- Availability depends on GitHub OAuth and API endpoints.
-- Redis-backed server-side session revocation is tracked separately in Issue #13.
+Redis/KV never stores access tokens, cookies, vacancy text or resume content. Rate-limit identifiers are hashed/HMACed. Optional session denylisting stores only a hashed session id, revocation time and TTL; memory fallback is used when Redis is unavailable.
+
+Template definitions are data-only. They cannot inject JavaScript, arbitrary HTML, external CSS or event handlers. Text is escaped, project URLs are HTTPS-only and unsupported template/schema versions use a safe fallback. Custom logos remain temporary `blob:` URLs and are not serialized.
+
+## Remaining limitations
+
+A stolen valid cookie can be replayed until expiry unless its session is denylisted or secrets are rotated. Disabling the optional denylist removes central early revocation. Availability still depends on GitHub and, when configured, Redis/KV.
 
 ## Secret rotation
 
-Rotate `SESSION_SECRET` to invalidate all local sessions. Rotate `GITHUB_OAUTH_CLIENT_SECRET` in GitHub and deployment settings after suspected exposure. Never commit either value.
-
-## Redis/KV и распределённая инфраструктура v3.2
-
-- OAuth token, cookie, текст вакансии и содержимое резюме никогда не записываются в Redis.
-- Ключи rate limiting используют HMAC/хэш IP или session id, а не исходные идентификаторы.
-- Authenticated-self данные имеют отдельный cache namespace и не читаются публичным запросом.
-- Session denylist опционален и хранит только хэш `sid`, `revokedAt` и TTL до истечения cookie.
-- При недоступном Redis запросы переходят на локальный memory fallback; ошибка storage не раскрывается клиенту.
-- Метрики содержат только тип cache result, backend, latency, degraded flag и HTTP status.
+Rotate `SESSION_SECRET` to invalidate local sessions and rotate the GitHub OAuth client secret after suspected exposure. Redis/KV credentials and `RATE_LIMIT_SECRET` are separate secrets and should be rotated independently.
