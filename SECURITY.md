@@ -1,68 +1,85 @@
 # Security Policy
 
-Auto Resume handles GitHub profile data, OAuth sessions, serverless API requests, local resume drafts, and public-link payloads. Please report vulnerabilities privately and avoid exposing users or credentials while testing.
+Auto Resume работает с GitHub OAuth, serverless API, локальными черновиками резюме, public links и несколькими отдельными browser-storage подсистемами. Если вы нашли уязвимость, сообщайте о ней приватно и не прикладывайте реальные credentials или чужие данные к публичным материалам.
 
-## Supported versions
+## Поддерживаемые версии
 
-| Version | Security support |
-|---|---|
-| 3.x | Supported |
-| 2.x and earlier | No longer supported |
+| Версия | Статус |
+| --- | --- |
+| 3.x | поддерживается |
+| 2.x and earlier | не поддерживается |
 
-Security fixes are prepared against the latest `main` branch and released as a new SemVer version.
+Security fixes готовятся для актуального `main` и выпускаются новой SemVer-версией.
 
-## Reporting a vulnerability
+## Как сообщить об уязвимости
 
-Use GitHub's [private vulnerability reporting](https://github.com/Onmaynec/Auto-resume/security/advisories/new).
+Используйте GitHub [private vulnerability reporting](https://github.com/Onmaynec/Auto-resume/security/advisories/new).
 
-Do not open a public Issue for a suspected vulnerability. Do not paste access tokens, OAuth cookies, authorization codes, `SESSION_SECRET`, GitHub OAuth client secrets, Redis credentials, private repository data, IP addresses, or confidential resume content into Issues, pull requests, screenshots, or logs.
+Не создавайте публичный Issue, если проблема может затрагивать безопасность или приватность.
 
-A useful private report contains:
+В отчёт не нужно вставлять реальные:
 
-- the affected version or commit;
-- the affected page, endpoint, cookie, storage key, or workflow;
-- a minimal reproduction using synthetic accounts and redacted values;
-- the expected and observed security boundary;
-- impact and prerequisites;
-- suggested remediation, when available.
+- access tokens;
+- OAuth cookie values;
+- authorization codes;
+- `SESSION_SECRET`;
+- GitHub OAuth client secrets;
+- Redis/KV credentials;
+- private repository data;
+- IP addresses;
+- содержимое конфиденциального резюме или вакансии.
 
-The maintainer aims to acknowledge actionable reports promptly, validate them privately, coordinate a fix, and publish credit when requested and safe.
+Хороший отчёт обычно содержит affected version/commit, затронутую страницу или endpoint, минимальный reproduction на synthetic data, ожидаемую и фактическую security boundary, impact и необходимые prerequisites.
 
-## Security scope
+## Что особенно важно проверять
 
-High-value areas include:
+К приоритетным областям относятся:
 
-- OAuth Authorization Code Flow, PKCE, and `state`;
-- encrypted `HttpOnly`, `Secure`, `SameSite` session cookies;
-- logout, grant revocation, and optional session denylisting;
-- same-origin and CSRF checks on state-changing requests;
-- serverless method allowlists, rate limits, cache partitioning, and error sanitization;
-- Redis/KV keys and the guarantee that OAuth tokens are not persisted there;
-- public resume link parsing and legacy migrations;
-- template rendering, URL sanitization, and custom-logo privacy;
-- Service Worker cache boundaries and update activation;
-- accidental secret disclosure in logs, fixtures, artifacts, or documentation.
+- OAuth Authorization Code Flow, PKCE и `state`;
+- encrypted `HttpOnly`, `Secure`, `SameSite` session cookie;
+- logout, GitHub grant revocation и session denylist;
+- same-origin/CSRF защита state-changing requests;
+- method allowlists, rate limiting, timeout и error sanitization в serverless API;
+- разделение public cache и authenticated-self cache;
+- гарантия, что OAuth tokens не сохраняются в Redis/KV;
+- public resume parser и migrations старых ссылок;
+- template rendering, URL sanitization и custom-logo privacy;
+- Service Worker cache boundaries;
+- отсутствие Tracker/Interview Prep data в public share, API, Redis/KV и analytics;
+- утечки secrets через logs, fixtures, screenshots, artifacts или документацию.
 
-The following generally are not vulnerabilities unless they cross a documented security boundary:
+Подробные trust boundaries описаны в [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md).
 
-- public information already available from a GitHub profile;
-- self-XSS requiring a user to paste code into developer tools;
-- missing best-practice headers without a demonstrated impact;
-- denial of service requiring unrealistic local-only interaction;
-- reports against unsupported versions without impact on the current release.
+## Что обычно не считается уязвимостью
 
-## Safe testing
+Само по себе не является security issue:
 
-Use test accounts and synthetic resume data. Do not access another person's account, private repositories, drafts, or sessions. Do not degrade GitHub, Vercel, Upstash, or repository infrastructure. Stop testing when data exposure, persistence, or service impact becomes possible.
+- отображение информации, которая уже публична в GitHub-профиле;
+- self-XSS, требующий вручную вставить код в DevTools;
+- отсутствие необязательного best-practice header без реального impact;
+- локальный denial of service, требующий нереалистичного ручного сценария;
+- проблема только в неподдерживаемой версии без влияния на текущую 3.x.
 
-Automated scanning must respect rate limits and must not upload repository contents to an untrusted third party.
+Если такой случай всё же пересекает документированную security boundary, его стоит сообщить приватно.
 
-## Disclosure and release process
+## Правила безопасного тестирования
 
-1. The report remains private while impact and affected versions are validated.
-2. A fix is developed in a restricted branch or private advisory fork when appropriate.
-3. Relevant unit, browser, privacy, and regression checks are added.
-4. The fix is merged and released through the normal verified release workflow.
-5. The advisory is published after users can update, with coordinated credit when requested.
+Используйте тестовые аккаунты и synthetic resume/vacancy data.
 
-Never create or move a public release tag before the fix is ready for disclosure.
+Не получайте доступ к чужим аккаунтам, private repositories, drafts, Tracker records, Prep sessions или OAuth sessions. Не создавайте нагрузку, которая может ухудшить работу GitHub, Vercel, Upstash или инфраструктуры репозитория.
+
+Если во время проверки появляется риск реальной утечки, сохранения чужих данных или нарушения доступности, тест нужно остановить.
+
+Автоматические scanners должны соблюдать rate limits и не загружать содержимое репозитория на недоверенные сторонние сервисы.
+
+## Как проходит исправление
+
+1. Maintainer проверяет отчёт приватно и определяет affected versions.
+2. Fix готовится без публичного раскрытия деталей, при необходимости через private advisory fork или ограниченную ветку.
+3. Добавляются unit, browser, privacy и regression tests.
+4. Изменение проходит обычный verified release workflow.
+5. Advisory публикуется после того, как исправленная версия доступна пользователям.
+
+При желании автора отчёта можно указать в credits, если это безопасно и согласовано.
+
+Публичный release tag не должен появляться до момента, когда исправление готово к раскрытию.
