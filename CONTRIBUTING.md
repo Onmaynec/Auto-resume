@@ -1,12 +1,12 @@
 # Contributing to Auto Resume
 
-Thank you for improving Auto Resume. Contributions should preserve the project's privacy guarantees, bilingual interface, offline PWA behavior, and compatibility with existing drafts and public resume links.
+Auto Resume принимает изменения, если они не ломают четыре базовых свойства проекта: privacy boundaries, RU/EN интерфейс, offline PWA и совместимость существующих drafts/public links.
 
-Before participating, read the [Code of Conduct](CODE_OF_CONDUCT.md). Security vulnerabilities must follow the private process in [SECURITY.md](SECURITY.md), not a public Issue.
+Перед работой прочитайте [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md). Уязвимости не публикуются в обычных Issues — для них действует процесс из [`SECURITY.md`](SECURITY.md).
 
-## Development environment
+## Локальное окружение
 
-Auto Resume uses Node.js 24 in GitHub Actions.
+В GitHub Actions используется Node.js 24.
 
 ```bash
 git clone https://github.com/Onmaynec/Auto-resume.git
@@ -16,131 +16,97 @@ npx playwright install chromium
 node scripts/test-server.mjs --port=4173 --quality-stubs
 ```
 
-The quality server provides deterministic local fixtures and stubs. Never add production credentials, OAuth cookies, private repository data, or real resume content to fixtures.
+Quality server использует synthetic fixtures и deterministic stubs. Не добавляйте туда production credentials, OAuth cookies, private repository data или реальные конфиденциальные резюме.
 
-## Commands
+## Команды
 
-| Command | Purpose |
-|---|---|
-| `npm run check` | Syntax-check production, API, test-server, and quality scripts |
-| `npm run docs:check` | Validate governance Markdown, local links, Issue Forms, and security contacts |
-| `npm test` | Run dependency-free unit and integration tests |
-| `npm run test:e2e` | Run Chromium user flows and axe accessibility checks |
-| `npm run test:lighthouse` | Run Lighthouse performance, accessibility, best-practices, and SEO budgets |
-| `npm run verify` | Run syntax, documentation, unit/integration, and whitespace checks |
+| Команда | Назначение |
+| --- | --- |
+| `npm run check` | syntax-check production/API/quality scripts |
+| `npm run docs:check` | governance Markdown, links, Issue Forms и security contacts |
+| `npm test` | unit/integration tests |
+| `npm run test:e2e` | Chromium user flows и axe |
+| `npm run test:lighthouse` | Lighthouse budgets |
+| `npm run verify` | syntax + documentation + tests + `git diff --check` |
 
-Run `npm run verify` before every push. Run the browser suite for user-visible flows, authentication, exports, sharing, storage, Service Worker, or accessibility changes.
+Перед push запускайте `npm run verify`. Browser suite обязателен для UI, OAuth, exports, sharing, browser storage, Service Worker и accessibility changes.
 
-## Architecture
+## Структура проекта
 
-The repository is intentionally dependency-light:
+- `index.html`, CSS и `app.js` — browser shell и координация приложения;
+- `js/*.mjs` — локализация, share/workspace, templates, OAuth state, updates и exports;
+- `api/` — serverless GitHub/OAuth endpoints;
+- `sw.js` — offline app shell и update lifecycle;
+- `tests/*.test.mjs` — unit/integration contracts;
+- `tests/e2e/` — Playwright/axe scenarios;
+- `scripts/test-server.mjs` — deterministic browser fixtures;
+- `.github/workflows/` — CI и release automation.
 
-- `index.html`, `styles.css`, and versioned CSS files define the browser shell;
-- `app.js` coordinates loading, rendering, preferences, workspace, and exports;
-- `js/*.mjs` contains testable modules for localization, sharing, templates, OAuth state, updates, and persistence;
-- `api/` contains serverless GitHub and OAuth endpoints;
-- `sw.js` owns the offline app shell and update lifecycle;
-- `tests/*.test.mjs` contains unit and integration contracts;
-- `tests/e2e/` contains Playwright and axe scenarios;
-- `scripts/test-server.mjs` provides deterministic browser fixtures;
-- `.github/workflows/` defines CI and release automation.
+Resume content должен оставаться независимым от presentation settings. DOCX, Markdown и TXT не должны зависеть от visual template.
 
-Keep resume content independent from presentation settings. DOCX, Markdown, and TXT exports must not depend on a visual template.
+## Ветки и commits
 
-## Branches and commits
+Начинайте от актуального `main`. Используйте понятные ветки: `feat/*`, `fix/*`, `docs/*`, `test/*` или `agent/*`.
 
-Create work from the latest `main`.
-
-Use one of these branch forms:
-
-- `feat/<short-description>` for product features;
-- `fix/<short-description>` for defects;
-- `docs/<short-description>` for documentation-only work;
-- `test/<short-description>` for quality infrastructure;
-- `agent/<short-description>` for automated repository work.
-
-Use Conventional Commit-style subjects:
+Commit subjects оформляются в стиле Conventional Commit, например:
 
 ```text
-feat: add a resume section
+feat: add resume section
 fix: preserve locale in shared links
-docs: document the OAuth threat model
-test: cover an offline migration
+docs: update threat model
+test: cover offline migration
 chore: update release metadata
 ```
 
-Keep commits focused. Do not mix generated artifacts, unrelated refactors, or local credentials into a pull request.
+Не смешивайте несвязанные refactors, generated artifacts и локальные credentials в одном PR.
 
 ## Pull request workflow
 
-The supported release path is:
+Обычный путь изменения:
 
 ```text
 branch → pull request → CI → main → release workflow → branch cleanup
 ```
 
-1. Rebase or merge the latest `main` into the branch.
-2. Open a pull request and complete `.github/pull_request_template.md`.
-3. Keep the pull request in draft while required checks are failing.
-4. Address test, privacy, accessibility, localization, and compatibility findings.
-5. Merge only after `verify`, `documentation`, `browser-e2e`, and `lighthouse` succeed.
-6. Delete the merged branch when it is no longer needed.
+Перед merge:
 
-Do not create a release tag manually for a normal release. A version change merged into `main` triggers `.github/workflows/release.yml`, which verifies metadata, creates `vX.Y.Z`, and publishes GitHub Release notes from `CHANGELOG.md`.
+1. Синхронизируйте ветку с `main`.
+2. Заполните `.github/pull_request_template.md`.
+3. Держите PR в draft, пока обязательные проверки падают.
+4. Исправьте findings по tests, privacy, accessibility, Localization и compatibility.
+5. Дождитесь успешных `verify`, `documentation`, `browser-e2e` и `lighthouse`.
+6. После merge удалите ненужную ветку.
 
-A release pull request must update all of:
+Обычный release tag вручную не создаётся. Version change в `main` запускает `.github/workflows/release.yml`. Release PR должен синхронно обновить `package.json`, `js/version.mjs`, `sw.js` и соответствующий `## vX.Y.Z` в `CHANGELOG.md`.
 
-- `package.json`;
-- `js/version.mjs`;
-- `sw.js`;
-- the matching `## vX.Y.Z` section in `CHANGELOG.md`.
+## Serverless API
 
-## Serverless API requirements
+Новый или изменённый endpoint должен явно ограничивать HTTP methods, выставлять подходящие security/cache headers, использовать осознанные cookie attributes `HttpOnly`, `Secure`, `SameSite`, защищать state-changing requests через same-origin и CSRF controls и сохранять PKCE/`state` validation.
 
-Every new or changed endpoint under `api/` must:
-
-- explicitly allow supported HTTP methods and return `405` for others;
-- set appropriate content type, cache, referrer, framing, and sniffing headers;
-- use `HttpOnly`, `Secure`, and intentional `SameSite` cookie attributes;
-- protect state-changing requests with same-origin and CSRF controls;
-- preserve OAuth `state` and PKCE validation where applicable;
-- avoid tokens, cookies, authorization codes, session identifiers, IP addresses, private profile data, and resume content in logs;
-- use `no-store` for authenticated or private responses;
-- apply rate limiting and bounded timeouts to external requests;
-- return stable, sanitized error codes rather than upstream secrets.
-
-Tests must prove method handling, origin checks, cookie policy, redaction, and failure behavior.
+Нельзя писать в logs tokens, cookies, authorization codes, session identifiers, IP addresses, private profile data или resume content. Private/authenticated responses используют `no-store`; внешние requests должны иметь rate limits/timeouts и sanitized errors.
 
 ## Localization
 
-Russian and English dictionaries in `js/i18n.mjs` must contain identical keys.
+RU и EN dictionaries должны иметь одинаковые keys. Новый интерфейсный текст добавляется сразу в обе локали через `data-i18n*` или `t()`, без склейки переводимых фрагментов.
 
-When adding interface text:
+## PWA и APP_SHELL
 
-1. add both RU and EN values;
-2. use `data-i18n`, `data-i18n-placeholder`, `data-i18n-aria-label`, or `t()`;
-3. avoid concatenating translated sentence fragments;
-4. test interpolation and fallback behavior;
-5. run `npm run verify` and the relevant browser scenario.
+Если `index.html` начинает зависеть от нового same-origin runtime file, добавьте его в `APP_SHELL` внутри `sw.js`. При release меняется `APP_VERSION`. `/api/*` кэшировать нельзя.
 
-## PWA cache and offline behavior
+Проверяйте первую online installation, offline navigation reload и активацию новой версии.
 
-When adding a required same-origin runtime file to `index.html`, add it to `APP_SHELL` in `sw.js`. A release must also bump `APP_VERSION`, producing a new cache namespace.
+## Документация
 
-Do not cache `/api/*`. Test online installation, an offline navigation reload, and update activation when changing Service Worker behavior.
-
-## Documentation and links
-
-Use one H1 per governance document, do not skip heading levels, and keep relative links valid. Run:
+Governance Markdown использует один H1, последовательные heading levels и рабочие relative links.
 
 ```bash
 npm run docs:check
 ```
 
-The checker also verifies that Issue Forms and the pull request template warn contributors not to publish secrets.
+Checker также проверяет, что Issue Forms и pull request template предупреждают о secrets.
 
-## Reporting bugs and proposing features
+## Issues и security reports
 
-Use the repository's structured Issue Forms. Include a minimal reproduction with redacted logs and synthetic data.
+Обычный bug/feature request создаётся через structured Issue Forms с synthetic data и redacted logs.
 
-Do not publish access tokens, OAuth cookies, client secrets, Redis credentials, private repository data, or confidential resume content. Use [private vulnerability reporting](https://github.com/Onmaynec/Auto-resume/security/advisories/new) for suspected security issues.
+Не публикуйте access token, OAuth cookie, client secret, Redis credential, private repository data или confidential resume. Подозрение на уязвимость отправляйте через [private vulnerability reporting](https://github.com/Onmaynec/Auto-resume/security/advisories/new).
