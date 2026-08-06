@@ -1,128 +1,87 @@
-# Application Tracker
+# Application Tracker — Auto Resume 3.7
 
-Auto Resume v3.7 adds a local job-application pipeline next to the existing resume workspace. It is intended for lightweight follow-up planning without a server account, analytics endpoint or external database.
+Application Tracker — локальная воронка откликов рядом с основным workspace. Для неё не нужен аккаунт Auto Resume, серверная база или analytics endpoint: записи живут только в браузере.
 
-## Data model
+## Хранилище
 
-The tracker uses a separate versioned key:
+Tracker использует отдельный versioned key:
 
 ```text
 auto-resume:application-tracker:v1
 ```
 
-Each normalized record contains only allowlisted fields:
+Запись содержит только разрешённые поля: ID, компанию, роль, HTTPS-ссылку вакансии, статус, даты отклика и follow-up, заметки, timestamps и optional reference на resume draft.
 
-```json
-{
-  "id": "acme-frontend-developer-1785663600000",
-  "company": "Acme",
-  "role": "Frontend Developer",
-  "vacancyUrl": "https://jobs.example.com/frontend",
-  "status": "applied",
-  "appliedDate": "2026-08-01",
-  "followUpDate": "2026-08-04",
-  "notes": "Send portfolio link.",
-  "draft": {
-    "id": "octocat-1785663600000",
-    "name": "Frontend Developer — Acme"
-  },
-  "createdAt": "2026-08-02T09:40:00.000Z",
-  "updatedAt": "2026-08-02T09:40:00.000Z"
-}
-```
+Draft reference хранит только `id` и `name`. Содержимое резюме, presentation settings, Application Kit, Audit report и исходный vacancy text в запись не копируются.
 
-The linked draft is only a reference. Resume content, presentation settings, Application Kit output, audit reports and vacancy text are not copied into the tracker.
+## Статусы
 
-## Stable statuses
+Поддерживаются:
 
-The schema accepts these values:
+- `saved`;
+- `applied`;
+- `screening`;
+- `interview`;
+- `offer`;
+- `rejected`;
+- `withdrawn`.
 
-- `saved`
-- `applied`
-- `screening`
-- `interview`
-- `offer`
-- `rejected`
-- `withdrawn`
+Неизвестное значение нормализуется к `saved`. `offer`, `rejected` и `withdrawn` считаются terminal statuses и не попадают в overdue follow-up.
 
-Unknown values fall back to `saved`. Terminal statuses (`offer`, `rejected`, and `withdrawn`) are excluded from overdue follow-up counts.
+## Follow-up
 
-## Follow-up ordering
+Список сортируется по полезности для следующего действия:
 
-Records are sorted by actionable state:
+1. просроченные follow-up;
+2. запланированные на ближайшие три дня;
+3. более поздние;
+4. без follow-up date.
 
-1. overdue;
-2. due within three days;
-3. scheduled later;
-4. no follow-up date.
+Внутри одной группы используются дата, время последнего изменения и название компании, поэтому одинаковый набор данных сортируется предсказуемо.
 
-Records in the same group use the follow-up date, update time and company name as deterministic tie breakers. The calculation uses local date values only and performs no background requests.
+## Import и export
 
-## Import and export
+Dedicated JSON export содержит versioned envelope и только tracker schema. При import данные нормализуются; записи с одинаковым ID объединяются по наиболее новому `updatedAt`. Future schema versions отклоняются.
 
-JSON export uses a dedicated envelope:
+CSV export экранирует ячейки и защищает от spreadsheet formula injection: значения, начинающиеся с `=`, `+`, `-` или `@`, получают безопасный префикс перед сериализацией.
 
-```json
-{
-  "type": "auto-resume-application-tracker",
-  "version": 1,
-  "exportedAt": "2026-08-02T09:40:00.000Z",
-  "tracker": {
-    "version": 1,
-    "records": []
-  }
-}
-```
+## Ограничения входа
 
-Import validates the type and version, normalizes every field, ignores invalid records and merges duplicate IDs by the newest `updatedAt` value.
+- максимум 120 записей;
+- company — до 120 символов;
+- role — до 160;
+- vacancy URL — до 600 и только HTTPS;
+- notes — до 2400;
+- draft ID — до 180;
+- draft name — до 160.
 
-CSV export quotes every cell and protects against CSV injection. Values beginning with `=`, `+`, `-` or `@` receive a leading apostrophe before serialization.
-
-## Input limits
-
-- up to 120 records;
-- company: 120 characters;
-- role: 160 characters;
-- vacancy URL: 600 characters and HTTPS only;
-- notes: 2,400 characters;
-- draft ID: 180 characters;
-- draft name: 160 characters.
-
-Invalid dates and non-HTTPS URLs normalize to an empty value instead of being rendered or opened.
+Некорректные даты и небезопасные URL не рендерятся как валидные значения.
 
 ## Privacy boundary
 
-Tracker data is stored only in the browser under its dedicated local-storage key. It is not included in:
+Tracker не входит в:
 
-- public resume hashes;
-- workspace draft records;
-- the existing workspace backup;
-- GitHub profile API requests;
-- OAuth session data;
-- Redis/KV caches;
-- Application Kit output;
-- Resume Quality Audit reports;
-- analytics or logs.
+- workspace draft и общий workspace backup;
+- public resume payload;
+- GitHub profile API/OAuth data;
+- Redis/KV;
+- Application Kit;
+- Resume Quality Audit;
+- analytics и server logs.
 
-The tracker panel is removed in public read-only resume mode. Export happens through local `Blob` downloads. The UI module does not call `fetch` and does not use `sessionStorage`.
+В public read-only режиме панель Tracker не показывается. Export создаётся локально через browser `Blob`; UI не отправляет tracker records через `fetch` и не использует `sessionStorage`.
 
-Because the tracker uses browser storage, clearing site data removes it. Users should export the dedicated JSON file before clearing browser storage or moving to another device.
+Очистка site data удаляет tracker database, поэтому перед переносом устройства или очисткой браузера нужен dedicated JSON export.
 
-## Offline behavior
+## Offline
 
-The engine, UI module and stylesheet are part of the PWA app shell. After the application has loaded once, CRUD, filters, statistics and local export continue to work offline.
+Engine, UI и stylesheet входят в PWA `APP_SHELL`. После первой успешной загрузки CRUD, filters, statistics и local export работают без сети.
 
-## Testing contracts
+## Проверка
 
-The release suite verifies:
+Тесты должны покрывать normalization, statuses, terminal-state logic, CRUD, сортировку follow-up, JSON version handling, duplicate merge, CSV injection protection, draft references и отсутствие tracker data в share/API schemas.
 
-- bounded deterministic normalization;
-- stable statuses and terminal-state behavior;
-- CRUD and merge semantics;
-- follow-up ordering and statistics;
-- JSON version handling;
-- CSV injection protection;
-- draft references without resume content;
-- absence from share and API modules;
-- Chromium CRUD, filters, downloads and public-link privacy;
-- accessibility and Lighthouse budgets.
+```bash
+npm run verify
+npm run test:e2e
+```
